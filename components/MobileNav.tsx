@@ -73,13 +73,14 @@ const MobileNav = async ({
               </div>
             </SheetTitle>
           </SheetHeader>
-          <div className="mobilenav-sheet">
+          <div className="mobilenav-sheet ">
             <SheetClose asChild>{renderItems()}</SheetClose>
+
+            <LogoutFooter user={user} type="mobile" />
           </div>
 
-          <SheetFooter className="z-20">
-            <LogoutFooter user={user} type="mobile" />
-          </SheetFooter>
+          {/* <SheetFooter className="z-20">
+          </SheetFooter> */}
         </SheetContent>
       </Sheet>
     </section>

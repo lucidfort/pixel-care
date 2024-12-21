@@ -1,3 +1,4 @@
+import AuthForm from "@/components/forms/AuthForm";
 import PatientForm from "@/components/forms/PatientForm";
 import HeaderBox from "@/components/HeaderBox";
 import React from "react";
@@ -9,6 +10,7 @@ function AddPatientPage() {
         title="Add New Patient"
         subtitle="Fill the form with the correct information"
       />
+
       <PatientForm type="create" />
     </div>
   );

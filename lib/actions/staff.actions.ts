@@ -1,42 +1,69 @@
 "use server";
 
 import { StaffProps } from "@/types";
-import { Staff } from "@/types/appwrite.types";
 import { revalidatePath } from "next/cache";
 import { Query } from "node-appwrite";
-import { users } from "../appwrite.config";
+import { BUCKET_ID, storage, users } from "../appwrite.config";
 import { db } from "../database.config";
 import { parseStringify } from "../utils";
 import { createUser } from "./user.actions";
 
 // STAFF ( DOCTORS && NURSES )
-export const createStaff = async ({ password, ...userData }: StaffProps) => {
-  const { email, firstName, lastName, role } = userData;
-
+export const createStaff = async ({
+  password,
+  email,
+  firstName,
+  lastName,
+  label,
+  birthDate,
+  gender,
+  phone,
+  address,
+  bloodType,
+  identificationDocument,
+  ...userData
+}: StaffProps) => {
   try {
     const newUser = await createUser({
-      email,
       password,
-      name: `${firstName} ${lastName}`,
+      email,
+      firstName,
+      lastName,
+      label,
+      birthDate,
+      gender,
+      phone,
+      address,
+      bloodType,
+      identificationDocument,
     });
 
-    if (newUser) {
-      await users.updateLabels(newUser.$id, [role]);
+    await users.updateLabels(newUser.accountId, [label]);
+
+    const newStaff = await db.staffs.create({
+      ...userData,
+      role: label,
+      user: newUser.userId,
+      accountId: newUser.accountId,
+    });
+
+    if (!newStaff || newStaff === undefined) {
+      await db.users.delete(newUser.userId);
+      await users.delete(newUser.accountId);
+      await storage.deleteFile(BUCKET_ID!, newUser.fileId);
+
+      throw Error("Failed to create staff");
     }
 
-    const newStaff = await db.staffs.create(userData, newUser.$id);
+    label === "doctor"
+      ? revalidatePath("/list/doctors")
+      : revalidatePath("/list/nurses");
 
-    if (newStaff) {
-      role === "doctor"
-        ? revalidatePath("/list/doctors")
-        : revalidatePath("/list/nurses");
-    } else {
-      await users.delete(newUser.$id);
-    }
+    revalidatePath("/list/staffs");
 
     return parseStringify(newStaff);
   } catch (error: any) {
-    console.error(`Error creating ${role}`, error);
+    console.error(`Error creating ${label}`, error);
   }
 };
 
@@ -75,9 +102,15 @@ export const getStaffs = async ({
   }
 };
 
-export const getStaff = async ({ id }: { id: string }) => {
+export const getStaff = async ({
+  id,
+  query,
+}: {
+  id: string;
+  query?: string[];
+}) => {
   try {
-    const staff = await db.staffs.get(id);
+    const staff = await db.staffs.get(id, query);
 
     return parseStringify(staff);
   } catch (error) {
@@ -87,19 +120,36 @@ export const getStaff = async ({ id }: { id: string }) => {
 
 export const updateStaff = async ({
   data,
+  userId,
   id,
 }: {
-  data: Partial<Staff>;
+  data: Partial<StaffProps>;
+  userId: string;
   id: string;
 }) => {
   try {
-    const updatedStaff = await db.staffs.update(id, data);
+    const updatedUser = await db.users.update(userId, {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      birthDate: data.birthDate,
+      gender: data.gender,
+      label: data.label,
+      address: data.address,
+      bloodType: data.bloodType,
+    });
 
-    if (updatedStaff) {
-      if (data.role === "doctor") {
+    const updatedStaff = await db.staffs.update(id, {
+      department: data.department,
+      position: data.position,
+    });
+
+    if (updatedStaff || updatedUser) {
+      if (data.label === "doctor") {
         revalidatePath(`/list/doctors`);
         revalidatePath(`/list/doctors/${id}`);
-      } else if (data.role === "nurse") {
+      } else if (data.label === "nurse") {
         revalidatePath(`/list/nurses`);
         revalidatePath(`/list/nurses/${id}`);
       } else {
@@ -125,9 +175,22 @@ export const deleteStaff = async ({
   id: string;
 }) => {
   try {
-    const deletedStaff = await db.staffs.delete(id);
+    const userToDelete = await db.staffs.get(id);
 
-    if (deletedStaff) await users.delete(id);
+    if (!userToDelete) throw Error("User does not exist");
+
+    if (userToDelete?.user?.identificationDocumentId) {
+      await storage.deleteFile(
+        BUCKET_ID!,
+        userToDelete.user.identificationDocumentId
+      );
+    }
+
+    await users.delete(userToDelete.accountId);
+
+    const deletedStaff = await db.staffs.delete(userToDelete.$id);
+
+    if (!deletedStaff) throw Error("Staff wasn't deleted");
 
     role === "doctor"
       ? revalidatePath(`/list/doctors`)

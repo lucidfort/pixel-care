@@ -2,6 +2,7 @@
 
 import { getStaffs } from "@/lib/actions/staff.actions";
 import { Staff } from "@/types/appwrite.types";
+import { Query } from "node-appwrite";
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 interface Doctor {
@@ -32,19 +33,20 @@ export const DoctorsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     const fetchDoctors = async () => {
-      const fetchedDoctors = await getStaffs({ role: "doctor" });
-      const selectedDoctorsInfo = fetchedDoctors?.documents.map(
-        (doctor: Staff) => ({
-          id: doctor.$id,
-          name: `${doctor.firstName} ${doctor.lastName}`,
-          img: doctor.img,
-        })
-      );
-      setDoctors(selectedDoctorsInfo);
+      const fetchedDoctors = await getStaffs({
+        role: "doctor",
+      });
+
+      const doctorsInfo = fetchedDoctors?.documents.map((doctor: Staff) => ({
+        id: doctor.$id,
+        name: `${doctor.user.firstName} ${doctor.user.lastName}`,
+        img: doctor.user.identificationDocumentUrl,
+      }));
+      setDoctors(doctorsInfo);
     };
 
     if (!doctors) fetchDoctors();
-  }, [doctors]);
+  }, []);
 
   return (
     <DoctorsContext.Provider value={{ doctors, setDoctors }}>

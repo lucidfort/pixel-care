@@ -17,11 +17,11 @@ export const doctorAppointmentColumns: ColumnDef<Appointment>[] = [
     accessorKey: "patient",
     header: "Patient",
     cell: ({ row: { original: data } }) => {
-      const { firstName, lastName, $id } = data.patient;
+      const { firstName, lastName } = data.patient.user;
 
       return (
         <Link
-          href={`/list/patients/${$id}`}
+          href={`/list/patients/${data.patient.$id}`}
           className="font-semibold text-base min-w-[100px]"
         >
           {firstName} {lastName}

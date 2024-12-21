@@ -5,7 +5,6 @@ import { ColumnDef } from "@tanstack/react-table";
 
 import { ArrowUpDown } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { Button } from "../../ui/button";
 import ListTableActions from "../ListTableActions";
 
@@ -23,41 +22,41 @@ export const staffColumns: ColumnDef<Staff>[] = [
     ),
     cell: ({ row: { original: data } }) => {
       return (
-        <Link
-          href={`/list/doctors/${data.$id}`}
-          className="w-full flex items-center gap-2"
-        >
+        <div className="w-40 flex items-center h-10 gap-2">
           <Image
-            src={"/assets/icons/noAvatar.png"}
+            src={
+              data.user.identificationDocumentUrl ||
+              "/assets/icons/noAvatar.png"
+            }
             alt="image"
             width={26}
             height={26}
+            className="w-12 h-12 rounded-full object-cover object-center"
           />
-          {data?.firstName} {data?.lastName}
-        </Link>
+          {data?.user.firstName} {data?.user.lastName}
+        </div>
       );
     },
   },
   {
     accessorKey: "role",
-    header: () => <div className="hidden sm:flex">Role</div>,
+    header: () => "Role",
     cell: ({ row: { original: data } }) => {
-      return <div className="hidden sm:flex capitalize">{data?.role}</div>;
+      return <div className="capitalize">{data?.role}</div>;
     },
   },
   {
     accessorKey: "department",
-    header: () => <div className="hidden md:flex">Department</div>,
+    header: () => "Department",
     cell: ({ row: { original: data } }) => {
-      return <div className="hidden md:flex">{data.department}</div>;
+      return <div>{data.department}</div>;
     },
   },
   {
     accessorKey: "position",
-    header: () => <div className="hidden lg:flex">Position</div>,
-    cell: ({ row: { original: data } }) => {
-      return <div className="hidden lg:flex">{data.position}</div>;
-    },
+    header: () => "Position",
+    cell: ({ row: { original: data } }) =>
+      data.position ? data.position : "-",
   },
   {
     accessorKey: "actions",

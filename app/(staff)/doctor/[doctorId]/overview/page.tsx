@@ -4,6 +4,7 @@ import { getLoggedInUser } from "@/lib/actions/user.actions";
 import { extractName } from "@/lib/utils";
 import { SearchParamProps } from "@/types";
 import { redirect } from "next/navigation";
+
 interface Item {
   patient: { lastName: string; firstName: string };
   schedule: string;
@@ -21,9 +22,7 @@ const DoctorsOverviewPage = async ({ params }: SearchParamProps) => {
 
   const appointments = await getDoctorAppointments(id);
 
-  if (!appointments) return <p>No appointments were found</p>;
-
-  const calendarEvents = appointments?.map((item: Item) => ({
+  const calendarEvents = appointments?.documents?.map((item: Item) => ({
     title: `${item?.patient?.firstName} ${item?.patient?.lastName}`,
     start: new Date(item?.schedule),
     end: endTime(new Date(item?.schedule)),

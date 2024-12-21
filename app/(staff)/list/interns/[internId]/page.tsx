@@ -14,7 +14,7 @@ const SingleNursePage = async ({ params }: SearchParamProps) => {
       </div>
 
       {/* RIGHT */}
-      <div className="xl:w-1/3">r</div>
+      <div className="xl:w-1/3"></div>
     </div>
   );
 };

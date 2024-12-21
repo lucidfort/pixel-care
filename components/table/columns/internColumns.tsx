@@ -22,14 +22,18 @@ export const internColumns: ColumnDef<Staff>[] = [
     ),
     cell: ({ row: { original: data } }) => {
       return (
-        <div className="w-full flex items-center gap-2">
+        <div className="w-full h-10 flex items-center gap-2">
           <Image
-            src={"/assets/icons/noAvatar.png"}
+            src={
+              data.user.identificationDocumentUrl ||
+              "/assets/icons/noAvatar.png"
+            }
             alt="image"
             width={26}
             height={26}
+            className="w-12 h-12 rounded-full object-cover object-center"
           />
-          {data?.firstName} {data?.lastName}
+          {data?.user?.firstName} {data?.user?.lastName}
         </div>
       );
     },
@@ -38,21 +42,21 @@ export const internColumns: ColumnDef<Staff>[] = [
     accessorKey: "email",
     header: () => <div className="hidden md:flex">Email</div>,
     cell: ({ row: { original: data } }) => {
-      return <div className="hidden md:flex">{data.email}</div>;
+      return <div className="hidden md:flex">{data.user.email}</div>;
     },
   },
   {
     accessorKey: "phone",
     header: () => <div className="hidden sm:flex">Phone</div>,
     cell: ({ row: { original: data } }) => {
-      return <div className="hidden sm:flex">{data.phone}</div>;
+      return <div className="hidden sm:flex">{data.user.phone}</div>;
     },
   },
   {
     accessorKey: "address",
     header: () => <div className="hidden lg:flex">Address</div>,
     cell: ({ row: { original: data } }) => {
-      return <div className="hidden lg:flex">{data.address}</div>;
+      return <div className="hidden lg:flex">{data.user.address}</div>;
     },
   },
   // {

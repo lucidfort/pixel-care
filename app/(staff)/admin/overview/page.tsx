@@ -2,21 +2,19 @@ import {
   getAppointmentsPerMonth,
   getRecentAppointmentList,
 } from "@/lib/actions/appointment.actions";
-import { getAllPatients } from "@/lib/actions/patient.actions";
-import { getStaffs } from "@/lib/actions/staff.actions";
 import { Clock8, LucideUsers2, Workflow } from "lucide-react";
 
 import StatCard from "@/components/StatCard";
 import ActiveShapePie from "@/components/charts/ActiveShapePie";
 import SimpleBarChart from "@/components/charts/SimpleBarChart";
+import { getUsers } from "@/lib/actions/user.actions";
 import Link from "next/link";
 
 const AdminOverviewPage = async () => {
-  const patients = await getAllPatients();
-  const staffs = await getStaffs({});
+  const users = await getUsers();
   const appointments = await getRecentAppointmentList();
 
-  const year = new Date(Date.now()).getFullYear();
+  const year = new Date().getFullYear();
   const data = await getAppointmentsPerMonth(year);
 
   const appointmentsCount = [
@@ -28,7 +26,7 @@ const AdminOverviewPage = async () => {
   return (
     <div className="flex flex-1 flex-col w-full space-y-12">
       <section className="w-full space-y-4">
-        <h1 className="header">Welcome Doc.👋</h1>
+        <h1 className="header">Welcome Doc</h1>
         <p className="text-dark-700">
           Start the day with managing appointments
         </p>
@@ -37,14 +35,14 @@ const AdminOverviewPage = async () => {
       <div className="flex flex-col md:flex-row gap-4">
         <Link href="/list/patients" className="w-full">
           <StatCard
-            count={patients.totalCount}
+            count={users.patientCount}
             label="Patients"
             svg={<LucideUsers2 className="size-8 w-fit text-yellow-700" />}
           />
         </Link>
-        <Link href="/list/staff" className="w-full">
+        <Link href="/list/staffs" className="w-full">
           <StatCard
-            count={staffs.totalCount}
+            count={users.staffCount}
             label="Staff"
             svg={<Workflow className="size-8 w-fit text-green-700" />}
           />

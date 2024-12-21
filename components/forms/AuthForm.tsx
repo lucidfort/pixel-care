@@ -75,7 +75,9 @@ export default function AuthForm({ type }: { type: "sign-in" | "sign-up" }) {
         } else if (loggedInUser.role === "admin") {
           router.push("/admin/overview");
         } else {
-          router.push(`/${loggedInUser.role}/${loggedInUser.$id}/overview`);
+          router.push(
+            `/${loggedInUser.role}/${loggedInUser.doctorId}/overview`
+          );
         }
       }
 
@@ -110,7 +112,7 @@ export default function AuthForm({ type }: { type: "sign-in" | "sign-up" }) {
           bloodType: values.bloodType!,
         };
 
-        const newPatient = await signUp(patientData);
+        const newPatient = await signUp({ ...patientData, label: "patient" });
 
         if (newPatient) router.push(`/patient/${newPatient.$id}/overview`);
       }

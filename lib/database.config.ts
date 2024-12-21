@@ -2,6 +2,7 @@ import { ID, Models } from "node-appwrite";
 import {
   databases,
   DATABASE_ID,
+  USERS_COLLECTION_ID,
   STAFF_COLLECTION_ID,
   APPOINTMENT_COLLECTION_ID,
   PATIENT_COLLECTION_ID,
@@ -17,6 +18,11 @@ type CollectionMethods = {
 };
 
 const collections = [
+  {
+    databaseId: DATABASE_ID!,
+    collectionId: USERS_COLLECTION_ID!,
+    name: "users",
+  },
   {
     databaseId: DATABASE_ID!,
     collectionId: STAFF_COLLECTION_ID!,

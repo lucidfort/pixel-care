@@ -1,7 +1,6 @@
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import { getLoggedInUser } from "@/lib/actions/user.actions";
-import { redirect } from "next/navigation";
 
 export default async function StaffLayout({
   children,
@@ -10,13 +9,11 @@ export default async function StaffLayout({
 }) {
   const loggedInUser = await getLoggedInUser();
 
-  if (!loggedInUser) redirect("/sign-in");
-
   const user = {
-    id: loggedInUser.$id,
-    name: loggedInUser.name,
-    email: loggedInUser.email,
-    role: loggedInUser.role,
+    id: loggedInUser?.$id,
+    name: loggedInUser?.name,
+    email: loggedInUser?.email,
+    role: loggedInUser?.role,
   };
 
   return (

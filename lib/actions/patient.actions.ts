@@ -3,57 +3,68 @@
 import { PatientType } from "@/types";
 import { revalidatePath } from "next/cache";
 import { ID, Query } from "node-appwrite";
-import {
-  BUCKET_ID,
-  ENDPOINT,
-  PROJECT_ID,
-  storage,
-  users,
-} from "../appwrite.config";
+import { BUCKET_ID, storage, users } from "../appwrite.config";
 import { db } from "../database.config";
 import { parseStringify } from "../utils";
+import { createUser } from "./user.actions";
 
 export const createPatient = async ({
+  password,
+  email,
+  firstName,
+  lastName,
+  birthDate,
+  gender,
+  phone,
+  address,
+  bloodType,
   identificationDocument,
+  label,
   ...userData
-}: PatientType) => {
+}: PatientType & { password: string }) => {
   try {
+    const newUser = await createUser({
+      password,
+      email,
+      firstName,
+      lastName,
+      label,
+      birthDate,
+      gender,
+      phone,
+      address,
+      bloodType,
+      identificationDocument,
+    });
+
+    await users.updateLabels(newUser.accountId, [label]);
+
     const data = {
       ...userData,
+      user: newUser.userId,
+      accountId: newUser.accountId,
       treatmentConsent: true,
       disclosureConsent: true,
       privacyConsent: true,
     };
 
-    if (identificationDocument && identificationDocument.length > 0) {
-      const fileId = await uploadFile(identificationDocument[0]);
-
-      if (!fileId) throw Error("Uploading File failed");
-
-      const newPatient = await db.patients.create({
-        identificationDocumentId: fileId,
-        identificationDocumentUrl: `${ENDPOINT}/storage/buckets/${BUCKET_ID}/files/${fileId}/view??project=${PROJECT_ID}`,
-        ...data,
-      });
-
-      if (!newPatient) {
-        await storage.deleteFile(BUCKET_ID!, fileId);
-
-        throw Error("Failed to create patient");
-      }
-
-      return parseStringify(newPatient);
-    }
-
     const newPatient = await db.patients.create(data);
 
-    if (!newPatient) throw Error("Failed to create patient");
+    if (!newPatient || newPatient === undefined) {
+      await db.users.delete(newUser.userId);
+      await users.delete(newUser.accountId);
+      await storage.deleteFile(BUCKET_ID!, newUser.fileId);
+
+      return { success: false, message: "Failed to create patient" };
+    }
 
     revalidatePath("/list/patients");
 
-    return parseStringify(newPatient);
+    return { success: true };
   } catch (error) {
     console.error("Error creating patient", error);
+
+    return { success: false, message: "An error occurred. Please try again" };
   }
 };
 
@@ -71,9 +82,9 @@ export const uploadFile = async (file: File) => {
   }
 };
 
-export const getPatient = async (patientId: string) => {
+export const getPatient = async (patientId: string, query?: string[]) => {
   try {
-    const patient = await db.patients.get(patientId);
+    const patient = await db.patients.get(patientId, query);
 
     return parseStringify(patient);
   } catch (error) {
@@ -104,41 +115,78 @@ export const getAllPatients = async (query?: string[]) => {
 };
 
 export const updatePatient = async ({
-  dataToUpdate: { identificationDocument, ...dataToUpdate },
+  dataToUpdate: {
+    identificationDocument,
+    firstName,
+    lastName,
+    email,
+    phone,
+    birthDate,
+    gender,
+    label,
+    address,
+    bloodType,
+    ...dataToUpdate
+  },
   patientId,
+  userId,
 }: {
-  dataToUpdate: PatientType;
+  dataToUpdate: Partial<PatientType>;
   patientId: string;
+  userId: string;
 }) => {
   try {
-    const updatedPatient = await db.patients.update(patientId, dataToUpdate);
+    const updatedUser = await db.users.update(userId, {
+      firstName,
+      lastName,
+      email,
+      phone,
+      birthDate,
+      gender,
+      label,
+      address,
+      bloodType,
+    });
 
-    if (updatedPatient) {
-      revalidatePath("/list/patients");
+    const updatedPatient = await db.patients.update(patientId, {
+      ...dataToUpdate,
+    });
+
+    if (updatedPatient || updatedUser) {
+      revalidatePath(`/list/patients`);
       revalidatePath(`/list/patients/${patientId}`);
-    }
 
-    return parseStringify(updatedPatient);
+      return { success: true };
+    } else {
+      return { success: false, message: "Error updating patient" };
+    }
   } catch (error) {
     console.error("Error updating patient details", error);
+
+    return { success: false, message: "An error occurred. Please try again" };
   }
 };
 
 export const deletePatient = async (patientId: string) => {
   try {
-    const patient = await db.patients.get(patientId, [
-      Query.select(["identificationDocumentId", "userId"]),
+    const userToDelete = await getPatient(patientId, [
+      Query.select(["user.identificationDocumentId", "accountId", "$id"]),
     ]);
 
-    if (patient.identificationDocumentId !== null || patient.userId !== null) {
-      await storage.deleteFile(BUCKET_ID!, patient.identificationDocumentId);
+    if (!userToDelete) throw Error("User not found");
 
-      await users.delete(patient.userId);
+    if (userToDelete?.user?.identificationDocumentId) {
+      await storage.deleteFile(
+        BUCKET_ID!,
+        userToDelete.user.identificationDocumentId
+      );
     }
 
-    const deletedPatient = await db.patients.delete(patientId);
+    await users.delete(userToDelete.accountId);
 
-    if (!deletedPatient) throw Error;
+    const deletedPatient = await db.patients.delete(userToDelete.$id);
+
+    if (!deletedPatient) throw Error("Patient wasn't deleted");
 
     revalidatePath("/list/patients");
     revalidatePath(`/list/patients/${patientId}`);
@@ -147,6 +195,6 @@ export const deletePatient = async (patientId: string) => {
   } catch (error) {
     console.error("An error occurred while deleting patient", error);
 
-    return { success: false };
+    return { success: false, message: "An error occurred. Please try again" };
   }
 };

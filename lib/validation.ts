@@ -130,50 +130,68 @@ export const authFormValidation = (type: "sign-in" | "sign-up") =>
             ),
   });
 
-export const patientValidation = z.object({
-  firstName: z
-    .string()
-    .min(2, "Name must be at least 2 characters")
-    .max(20, "Name must be at most 50 characters"),
-  lastName: z
-    .string()
-    .min(2, "Name must be at least 2 characters")
-    .max(20, "Name must be at most 50 characters"),
-  email: z.string().email("Invalid email address"),
-  phone: z
-    .string()
-    .refine((phone) => /^\+\d{10,15}$/.test(phone), "Invalid phone number"),
-  birthDate: z.coerce.date(),
-  gender: z.enum(["male", "female", "other"]),
-  address: z
-    .string()
-    .min(5, "Address must be at least 5 characters")
-    .max(100, "Address must be at most 500 characters"),
-  occupation: z
-    .string()
-    .min(2, "Occupation must be at least 2 characters")
-    .max(500, "Occupation must be at most 500 characters"),
-  emergencyContactName: z
-    .string()
-    .min(2, "Contact name must be at least 2 characters")
-    .max(50, "Contact name must be at most 50 characters"),
-  emergencyContactNumber: z
-    .string()
-    .refine(
-      (emergencyContactNumber) => /^\+\d{10,15}$/.test(emergencyContactNumber),
-      "Invalid phone number"
-    ),
-  bloodType: z.string({ message: "bloodType is required" }),
-  primaryPhysician: z.string({ message: "Please select a doctor" }),
-  allergies: z.string().optional(),
-  currentMedication: z.string().optional(),
-  familyMedicalHistory: z.string().optional(),
-  pastMedicalHistory: z.string().optional(),
-  identificationNumber: z
-    .string()
-    .min(11, { message: "Please input correct NIN" }),
-  identificationDocument: z.custom<File[] | string>().optional(),
-});
+export const patientValidationSchema = (type: "create" | "update") =>
+  z.object({
+    firstName: z
+      .string()
+      .min(2, "Name must be at least 2 characters")
+      .max(20, "Name must be at most 50 characters"),
+    lastName: z
+      .string()
+      .min(2, "Name must be at least 2 characters")
+      .max(20, "Name must be at most 50 characters"),
+    email: z.string().email("Invalid email address"),
+    phone: z
+      .string()
+      .refine((phone) => /^\+\d{10,15}$/.test(phone), "Invalid phone number"),
+    birthDate: z.coerce.date(),
+    gender: z.enum(["male", "female", "other"]),
+    address: z
+      .string()
+      .min(5, "Address must be at least 5 characters")
+      .max(100, "Address must be at most 500 characters"),
+    occupation: z
+      .string()
+      .min(2, "Occupation must be at least 2 characters")
+      .max(500, "Occupation must be at most 500 characters"),
+    emergencyContactName: z
+      .string()
+      .min(2, "Contact name must be at least 2 characters")
+      .max(50, "Contact name must be at most 50 characters"),
+    emergencyContactNumber: z
+      .string()
+      .refine(
+        (emergencyContactNumber) =>
+          /^\+\d{10,15}$/.test(emergencyContactNumber),
+        "Invalid phone number"
+      ),
+    bloodType: z.string({ message: "bloodType is required" }),
+    primaryPhysician: z.string({ message: "Please select a doctor" }),
+    allergies: z.string().optional(),
+    currentMedication: z.string().optional(),
+    familyMedicalHistory: z.string().optional(),
+    pastMedicalHistory: z.string().optional(),
+    identificationNumber: z
+      .string()
+      .min(11, { message: "Please input correct NIN" }),
+    identificationDocument: z.custom<File[] | string>().optional(),
+
+    password:
+      type === "create"
+        ? z
+            .string()
+            .min(8, "Please increase password security")
+            .refine(
+              (password) =>
+                /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{9,}$/.test(
+                  password
+                ),
+              "Please increase password security"
+            )
+        : z.string().optional(),
+    confirmPassword:
+      type === "create" ? z.string().min(8) : z.string().optional(),
+  });
 
 export const staffValidation = (type: "create" | "update") =>
   z.object({
@@ -213,56 +231,8 @@ export const staffValidation = (type: "create" | "update") =>
     department: z.string({ message: "Department is required" }),
     bloodType: z.string({ message: "bloodType is required" }),
     position: z.string().optional(),
-    img: z.custom<File[]>().optional(),
+    identificationDocument: z.custom<File[]>().optional(),
   });
-
-export const UpdatePatientFormValidation = z.object({
-  fname: z
-    .string()
-    .min(2, "Name must be at least 2 characters")
-    .max(50, "Name must be at most 50 characters"),
-  lname: z
-    .string()
-    .min(2, "Name must be at least 2 characters")
-    .max(50, "Name must be at most 50 characters"),
-  email: z.string().email("Invalid email address"),
-  phone: z
-    .string()
-    .refine((phone) => /^\+\d{10,15}$/.test(phone), "Invalid phone number"),
-  birthDate: z.coerce.date(),
-  gender: z.enum(["male", "female", "other"]),
-  address: z
-    .string()
-    .min(5, "Address must be at least 5 characters")
-    .max(500, "Address must be at most 500 characters"),
-  occupation: z
-    .string()
-    .min(2, "Occupation must be at least 2 characters")
-    .max(500, "Occupation must be at most 500 characters"),
-  emergencyContactName: z
-    .string()
-    .min(2, "Contact name must be at least 2 characters")
-    .max(50, "Contact name must be at most 50 characters"),
-  emergencyContactNumber: z
-    .string()
-    .refine(
-      (emergencyContactNumber) => /^\+\d{10,15}$/.test(emergencyContactNumber),
-      "Invalid phone number"
-    ),
-  primaryPhysician: z.string().min(2, "Select at least one doctor"),
-  insuranceProvider: z
-    .string()
-    .min(2, "Insurance name must be at least 2 characters")
-    .max(50, "Insurance name must be at most 50 characters"),
-  insurancePolicyNumber: z
-    .string()
-    .min(2, "Policy number must be at least 2 characters")
-    .max(50, "Policy number must be at most 50 characters"),
-  allergies: z.string().optional(),
-  currentMedication: z.string().optional(),
-  familyMedicalHistory: z.string().optional(),
-  pastMedicalHistory: z.string().optional(),
-});
 
 export const CreateAppointmentSchema = z.object({
   primaryPhysician: z.string().min(2, "Select a doctor"),
@@ -284,20 +254,14 @@ export const ScheduleAppointmentSchema = z.object({
 });
 
 export const CancelAppointmentSchema = z.object({
-  primaryPhysician: z.string().min(2, "Select a doctor"),
-  schedule: z.coerce.date(),
+  primaryPhysician: z.string().optional(),
+  schedule: z.coerce.date().optional(),
   appointmentReason: z.string().optional(),
   note: z.string().optional(),
   cancellationReason: z
     .string()
     .min(2, "Reason must be at least 2 characters")
     .max(500, "Reason must be at most 500 characters"),
-});
-
-export const MessageValidation = z.object({
-  title: z.string().min(2),
-  recipient: z.string(),
-  message: z.string().min(30),
 });
 
 export function getAppointmentSchema(type: string) {

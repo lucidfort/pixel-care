@@ -18,10 +18,11 @@ import { staffValidation } from "@/lib/validation";
 
 import { MessageCircleWarning } from "lucide-react";
 
-import { BloodTypes, GenderOptions, StaffFormDefaultValues } from "@/constants";
+import { BloodTypes, GenderOptions } from "@/constants";
 import { useToast } from "@/hooks/use-toast";
 import { Gender, StaffFormProps } from "@/types";
 import Image from "next/image";
+import { FileUploader } from "../FileUploader";
 import { Button } from "../ui/button";
 import { SelectItem } from "../ui/select";
 
@@ -36,7 +37,23 @@ const StaffForm = ({ data, type, table }: StaffFormProps) => {
 
   const form = useForm<z.infer<typeof validation>>({
     resolver: zodResolver(validation),
-    defaultValues: data ? { ...data } : { ...StaffFormDefaultValues },
+    defaultValues: {
+      firstName: data?.user.firstName ?? "",
+      lastName: data?.user.lastName ?? "",
+      phone: data?.user.phone ?? "",
+      email: data?.user.email ?? "",
+      password: "",
+      confirmPassword: "",
+      birthDate: data?.user.birthDate
+        ? new Date(data?.user.birthDate)
+        : new Date(),
+      gender: "male" as Gender,
+      bloodType: data?.user.bloodType ?? "",
+      address: data?.user.address ?? "",
+      department: data?.department ?? "",
+      position: data?.position ?? "",
+      identificationDocument: [],
+    },
   });
 
   const onSubmit = async (values: z.infer<typeof validation>) => {
@@ -54,8 +71,9 @@ const StaffForm = ({ data, type, table }: StaffFormProps) => {
         bloodType: values.bloodType!,
         department: values.department!,
         position: values.position,
-        role: table,
-        img: "",
+        identificationDocument:
+          (values.identificationDocument as File[]) || undefined,
+        label: table,
       };
 
       if (type === "create") {
@@ -69,12 +87,17 @@ const StaffForm = ({ data, type, table }: StaffFormProps) => {
           ...staffData,
           password: values.password!,
         });
-        if (newStaff !== undefined) {
+
+        if (newStaff || newStaff !== undefined) {
           form.reset();
           router.push(`/list/${table}s`);
 
           toast({
             title: `${table} created successfully`,
+          });
+        } else {
+          toast({
+            title: "An error occurred. Pleas try again.",
           });
         }
       }
@@ -82,10 +105,11 @@ const StaffForm = ({ data, type, table }: StaffFormProps) => {
       if (type === "update") {
         const response = await updateStaff({
           data: { ...staffData },
-          id: data.$id,
+          userId: data?.user.$id!,
+          id: data?.$id!,
         });
 
-        if (response.success) {
+        if (response.success === true) {
           router.push(`/list/${table}s`);
 
           toast({
@@ -97,13 +121,12 @@ const StaffForm = ({ data, type, table }: StaffFormProps) => {
           });
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Form submission error: ", error);
 
       toast({
         variant: "destructive",
         title: "Uh oh! Something went wrong.",
-        description: error.message,
       });
     } finally {
       setIsLoading(false);
@@ -224,9 +247,9 @@ const StaffForm = ({ data, type, table }: StaffFormProps) => {
           </CustomFormField>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-6">
-          {type === "create" && (
-            <>
+        {type === "create" && (
+          <>
+            <div className="flex flex-col sm:flex-row gap-6">
               <CustomFormField
                 control={form.control}
                 fieldType={FormFieldType.PASSWORD}
@@ -240,9 +263,23 @@ const StaffForm = ({ data, type, table }: StaffFormProps) => {
                 name="confirmPassword"
                 label="Confirm Password"
               />
-            </>
-          )}
-        </div>
+            </div>
+
+            <CustomFormField
+              control={form.control}
+              fieldType={FormFieldType.SKELETON}
+              name="identificationDocument"
+              renderSkeleton={(field) => (
+                <FormControl>
+                  <FileUploader
+                    mediaUrl={data?.identificationDocumentUrl}
+                    fieldChange={field.onChange}
+                  />
+                </FormControl>
+              )}
+            />
+          </>
+        )}
 
         {passwordError && (
           <Alert>

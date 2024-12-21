@@ -1,17 +1,24 @@
 import { Models } from "node-appwrite";
 import { Gender, Status } from ".";
 
+declare type Labels = "doctor" | "nurse" | "intern" | "patient" | "admin";
+
 export interface User extends Models.Document {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
   birthDate: Date;
+  phone: string;
   gender: Gender;
   address: string;
+  bloodType: string;
+  label: Labels;
+  identificationDocumentId: string | undefined;
+  identificationDocumentUrl: string | undefined;
 }
 
-export interface Patient extends User {
+export interface Patient extends Models.Document {
+  user: User;
   occupation: string;
   emergencyContactName: string;
   emergencyContactNumber: string;
@@ -22,13 +29,14 @@ export interface Patient extends User {
   pastMedicalHistory: string | undefined;
   identificationNumber: string | undefined;
   privacyConsent: boolean;
-  identificationDocumentUrl: string | undefined;
 }
 
-export interface Staff extends User {
+export interface Staff extends Models.Document {
+  user: User;
+  userId: string;
   department: string;
   position: string | undefined;
-  img: string | undefined;
+  // role: 'doctor' | 'nurse' | 'intern'
 }
 
 export interface Doctor extends Staff {
@@ -43,11 +51,11 @@ export interface Intern extends Staff {
 
 export interface Appointment extends Models.Document {
   patient: Patient;
-  primaryPhysician: Staff;
+  primaryPhysician: Doctor;
   schedule: Date;
   status: Status;
   appointmentReason: string;
-  note: string;
+  note: string | null;
   cancellationReason: string | null;
 }
 

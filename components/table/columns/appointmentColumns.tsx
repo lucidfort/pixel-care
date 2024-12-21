@@ -13,17 +13,14 @@ export const appointmentColumns: ColumnDef<Appointment>[] = [
     accessorKey: "primaryPhysician",
     header: "Doctor",
     cell: ({ row: { original: data } }) => {
-      const { firstName, lastName } = data.primaryPhysician;
+      const { firstName, lastName } = data.primaryPhysician.user;
       return (
         <Link
-          href={`/list/appointments/${data.$id}`}
+          href={`/list/doctors/${data.primaryPhysician.$id}`}
           className="flex flex-col gap-2"
         >
           <p className="whitespace-nowrap">
             {firstName} {lastName}{" "}
-          </p>
-          <p className="whitespace-nowrap md:hidden">
-            {formatDateTime(data.schedule).dateOnly}
           </p>
         </Link>
       );
@@ -33,31 +30,33 @@ export const appointmentColumns: ColumnDef<Appointment>[] = [
     accessorKey: "patient",
     header: "Patient",
     cell: ({ row: { original: data } }) => {
-      const { firstName, lastName } = data.patient;
+      const { firstName, lastName } = data.patient.user;
+
       return (
-        <div className="whitespace-nowrap">
-          {firstName} {lastName}
-        </div>
+        <Link
+          href={`/list/patients/${data.patient.$id}`}
+          className="flex flex-col gap-2"
+        >
+          <p className="whitespace-nowrap">
+            {firstName} {lastName}{" "}
+          </p>
+        </Link>
       );
     },
   },
   {
     accessorKey: "schedule",
-    header: () => <div className="hidden md:flex">Appointment</div>,
-    cell: ({ row }) => (
-      <p className="text-14-regular min-w-[100px] hidden md:flex">
-        {formatDateTime(row.original.schedule).dateTime}
+    header: "Schedule",
+    cell: ({ row: { original: data } }) => (
+      <p className="text-14-regular min-w-[100px]">
+        {formatDateTime(data.schedule).dateTime}
       </p>
     ),
   },
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => (
-      <div>
-        <StatusBadge status={row.original.status} />
-      </div>
-    ),
+    cell: ({ row: { original: data } }) => <StatusBadge status={data.status} />,
   },
   {
     id: "actions",

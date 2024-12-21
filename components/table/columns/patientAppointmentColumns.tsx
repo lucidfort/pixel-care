@@ -6,6 +6,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import AppointmentModal from "@/components/modals/AppointmentModal";
 import StatusBadge from "@/components/StatusBadge";
 import { formatDateTime } from "@/lib/utils";
+import AppointmentTableActions from "../AppointmentTableActions";
 
 export const patientAppointmentColumns: ColumnDef<Appointment>[] = [
   {
@@ -15,15 +16,12 @@ export const patientAppointmentColumns: ColumnDef<Appointment>[] = [
   {
     accessorKey: "primaryPhysician",
     header: "Doctor",
-    cell: ({ row: { original: data } }) => {
-      const { firstName, lastName } = data.primaryPhysician;
-
-      return (
-        <div className="font-semibold text-base min-w-[100px]">
-          Dr. {firstName} {lastName}
-        </div>
-      );
-    },
+    cell: ({ row: { original: data } }) => (
+      <div className="font-semibold text-base min-w-[100px]">
+        Dr. {data.primaryPhysician.user.firstName}{" "}
+        {data.primaryPhysician.user.lastName}
+      </div>
+    ),
   },
   {
     accessorKey: "schedule",
@@ -47,9 +45,7 @@ export const patientAppointmentColumns: ColumnDef<Appointment>[] = [
     id: "actions",
     header: () => <div className="pl-4">Actions</div>,
     cell: ({ row: { original: data } }) => (
-      <div className={data.status === "cancelled" ? "hidden" : "block"}>
-        <AppointmentModal type="cancel" data={data} />
-      </div>
+      <AppointmentTableActions data={data} />
     ),
   },
 ];

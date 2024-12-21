@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 
 import { Dispatch, SetStateAction } from "react";
-import { Appointment, Patient, User } from "./appwrite.types";
+import { Appointment, Patient, Staff, User } from "./appwrite.types";
 
 declare type SearchParamProps = {
   params: Promise<{ [key: string]: string }>;
@@ -9,7 +9,7 @@ declare type SearchParamProps = {
 };
 
 declare type Gender = "male" | "female" | "other";
-declare type JobTitle = "doctor" | "nurse" | "intern";
+declare type Labels = "doctor" | "nurse" | "intern" | "patient" | "admin";
 declare type Status = "pending" | "scheduled" | "cancelled";
 
 declare interface SigninProps {
@@ -25,6 +25,9 @@ type Users = {
   birthDate: Date;
   gender: Gender;
   address: string;
+  bloodType: string;
+  label: Labels;
+  identificationDocument?: File[] | undefined;
 };
 
 declare interface PatientType extends Users {
@@ -33,7 +36,6 @@ declare interface PatientType extends Users {
   emergencyContactNumber: string;
   bloodType: string;
   primaryPhysician: string;
-  identificationDocument?: File[] | undefined;
   identificationNumber: string;
   allergies: string | undefined;
   currentMedication: string | undefined;
@@ -53,15 +55,8 @@ declare interface StaffProps extends Users {
   password: string;
   department: string;
   position?: string;
-  role: "doctor" | "nurse" | "intern";
-  img?: string;
+  label: "doctor" | "nurse" | "intern";
 }
-
-declare type AddUserProps = {
-  email: string;
-  password: string;
-  name: string;
-};
 
 declare interface Patient extends SignupParams {
   $id: string;
@@ -85,16 +80,6 @@ declare type CreateAppointmentProps = {
   note: string | undefined;
   primaryPhysician: string;
   patient: string;
-};
-
-declare type UpdateAppointmentParams = {
-  appointmentId: string;
-  data: {
-    schedule: Date;
-    cancellationReason: string | undefined;
-    status: Status;
-    primaryPhysician: string;
-  };
 };
 
 declare type ReportType = {
@@ -128,16 +113,11 @@ declare interface MutateButtonProps {
   spanClassName?: string;
 }
 
-declare type DeleteUserModalProps = {
-  table: "patient" | "nurse" | "doctor" | "intern";
-  id?: string | number;
-};
-
 declare type AppointmentModalProps = {
   type: "schedule" | "create" | "cancel";
   role?: "appointment" | "report";
   data?: any;
-  id?: string;
+  patientId?: string;
 
   className?: string;
 };
@@ -152,13 +132,12 @@ declare interface AppointmentFormProps {
 
 declare interface StaffFormProps {
   type: "create" | "update";
-  data?: any;
+  data?: Staff;
   table: "doctor" | "nurse" | "intern";
 }
 
 declare interface PatientFormProps {
   type: "create" | "update";
-  primaryPhysicianId?: string;
   data?: Patient;
 }
 

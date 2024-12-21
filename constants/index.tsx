@@ -146,21 +146,6 @@ export const HealthQuotes = [
   "Take care of your body. It's the the only place you have to live",
 ];
 
-export const StaffFormDefaultValues = {
-  firstName: "",
-  lastName: "",
-  phone: "",
-  email: "",
-  password: "",
-  confirmPassword: "",
-  birthDate: new Date(Date.now()),
-  gender: "male" as Gender,
-  bloodType: "",
-  address: "",
-  department: "",
-  position: "",
-};
-
 export const BloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 
 export const monthlyAppointments = [

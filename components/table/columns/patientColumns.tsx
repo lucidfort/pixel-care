@@ -24,13 +24,16 @@ export const patientColumns: ColumnDef<Patient>[] = [
       return (
         <div className="flex items-center gap-2 text-16-semibold min-w-[130px]">
           <Image
-            src={data.identificationDocumentUrl || "/assets/icons/noAvatar.png"}
+            src={
+              data.user.identificationDocumentUrl ||
+              "/assets/icons/noAvatar.png"
+            }
             alt="image"
             width={46}
             height={46}
             className="rounded-full object-cover object-center"
           />
-          {data.firstName} {data.lastName}
+          {data.user.firstName} {data.user.lastName}
         </div>
       );
     },
@@ -39,14 +42,18 @@ export const patientColumns: ColumnDef<Patient>[] = [
     accessorKey: "email",
     header: "Email",
     cell: ({ row: { original: data } }) => {
-      return <div className="text-16-regular min-w-[100px]">{data.email}</div>;
+      return (
+        <div className="text-16-regular min-w-[100px]">{data.user.email}</div>
+      );
     },
   },
   {
     accessorKey: "phone",
     header: "Phone",
     cell: ({ row: { original: data } }) => {
-      return <div className="text-16-regular min-w-[100px]">{data.phone}</div>;
+      return (
+        <div className="text-16-regular min-w-[100px]">{data.user.phone}</div>
+      );
     },
   },
   {
@@ -54,7 +61,7 @@ export const patientColumns: ColumnDef<Patient>[] = [
     header: "Address",
     cell: ({ row: { original: data } }) => {
       return (
-        <div className="text-16-regular min-w-[100px]">{data.address}</div>
+        <div className="text-16-regular min-w-[100px]">{data.user.address}</div>
       );
     },
   },

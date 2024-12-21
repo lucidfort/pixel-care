@@ -15,7 +15,11 @@ import { Button } from "../ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { deletePatient } from "@/lib/actions/patient.actions";
 import { deleteStaff } from "@/lib/actions/staff.actions";
-import { DeleteUserModalProps } from "@/types";
+
+type DeleteUserModalProps = {
+  table: "patient" | "nurse" | "doctor" | "intern";
+  id: string;
+};
 
 const DeleteUserModal = ({ table, id }: DeleteUserModalProps) => {
   const [open, setOpen] = useState(false);
@@ -33,27 +37,24 @@ const DeleteUserModal = ({ table, id }: DeleteUserModalProps) => {
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
-      const deletedItem = await deleteActionMap[table](id as string);
 
-      if (deletedItem) {
-        toast({
-          description: (
-            <>
-              <span className="capitalize">{table}</span> has been deleted
-            </>
-          ),
-        });
+      await deleteActionMap[table](id);
 
-        setIsDeleting(false);
-        setOpen(false);
-      }
-    } catch (error: any) {
       toast({
-        description: error.message,
+        description: (
+          <>
+            <span className="capitalize">{table}</span> has been deleted
+          </>
+        ),
+      });
+    } catch (error) {
+      toast({
+        description: `Failed to delete ${table}`,
       });
 
       console.log(error);
     } finally {
+      setIsDeleting(false);
       setOpen(false);
     }
   };
@@ -81,7 +82,7 @@ const DeleteUserModal = ({ table, id }: DeleteUserModalProps) => {
           <Button
             type="submit"
             variant="destructive"
-            className="mt-4 p-2 bg-red-500 w-52"
+            className="mt-4 p-2 bg-red-500 w-52 capitalize"
             disabled={isDeleting}
           >
             {isDeleting ? (
@@ -89,7 +90,7 @@ const DeleteUserModal = ({ table, id }: DeleteUserModalProps) => {
                 <Loader className="animate-spin" /> Deleting
               </>
             ) : (
-              "Delete"
+              `Delete ${table}`
             )}
           </Button>
         </form>

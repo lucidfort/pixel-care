@@ -1,5 +1,5 @@
 import { Eye, MoreHorizontal } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import AppointmentModal from "../modals/AppointmentModal";
 import { Button } from "../ui/button";
 import {
@@ -8,9 +8,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 const AppointmentTableActions = ({ data }: { data?: any }) => {
   const router = useRouter();
+  const path = usePathname();
 
   return (
     <DropdownMenu>
@@ -20,24 +22,29 @@ const AppointmentTableActions = ({ data }: { data?: any }) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-black flex flex-col gap-3">
-        <DropdownMenuItem
-          className="cursor-pointer text-base space-x-2"
-          onClick={() => router.push(`/list/appointments/${data.$id}`)}
-        >
-          <Eye /> <span>View</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          asChild
-          className="cursor-pointer text-base space-x-2"
-        >
-          <AppointmentModal type="schedule" data={data} />
-        </DropdownMenuItem>
+        {path.startsWith("/list") && (
+          <DropdownMenuItem
+            className="cursor-pointer text-base space-x-2"
+            onClick={() => router.push(`/list/appointments/${data.$id}`)}
+          >
+            <Eye /> <span>View</span>
+          </DropdownMenuItem>
+        )}
+
+        {path.startsWith("/list") && (
+          <DropdownMenuItem
+            asChild
+            className="cursor-pointer text-base space-x-2"
+          >
+            <AppointmentModal type="schedule" data={data} className="w-8 h-8" />
+          </DropdownMenuItem>
+        )}
 
         <DropdownMenuItem
           asChild
           className="cursor-pointer text-base text-red-500 space-x-2"
         >
-          <AppointmentModal type="cancel" id={data.$id} />
+          <AppointmentModal type="cancel" data={data} className="w-8 h-8" />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -9,19 +9,13 @@ async function EditPatientPage({ searchParams }: SearchParamProps) {
 
   const patient = await getPatient(patientId as string);
 
-  const primaryPhysicianId = patient?.primaryPhysician?.$id;
-
   return (
     <div className="w-full flex flex-col gap-7">
       <HeaderBox
         title="Edit Patient"
         subtitle="Fill the form with the correct information"
       />
-      <PatientForm
-        type="update"
-        data={patient}
-        primaryPhysicianId={primaryPhysicianId}
-      />
+      <PatientForm type="update" data={patient} />
     </div>
   );
 }

@@ -1,25 +1,71 @@
 "use server";
 
 import { ID, Query } from "node-appwrite";
-import { account, createSessionClient, users } from "../appwrite.config";
+import {
+  account,
+  BUCKET_ID,
+  createSessionClient,
+  ENDPOINT,
+  PROJECT_ID,
+  storage,
+  users,
+} from "../appwrite.config";
 import { parseStringify } from "../utils";
 
-import { AddUserProps, SigninProps, SignupParams } from "@/types";
+import { SigninProps, SignupParams, Users } from "@/types";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { db } from "../database.config";
-import { getAllPatients } from "./patient.actions";
+import { getAllPatients, uploadFile } from "./patient.actions";
+import { getStaffs } from "./staff.actions";
 
-export const createUser = async (user: AddUserProps) => {
+export const createUser = async (user: Users & { password: string }) => {
   try {
+    let fileId;
+
     const newUser = await account.create(
       ID.unique(),
       user.email,
       user.password,
-      user.name
+      `${user.firstName} ${user.lastName}`
     );
 
-    return parseStringify(newUser);
+    if (user.identificationDocument && user.identificationDocument.length > 0) {
+      fileId = await uploadFile(user.identificationDocument[0]);
+
+      if (!fileId) throw Error("Uploading File failed");
+    }
+
+    const addUserToDatabase = await db.users.create({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone,
+      birthDate: user.birthDate,
+      gender: user.gender,
+      address: user.address,
+      bloodType: user.bloodType,
+      label: user.label,
+      identificationDocumentId: fileId ? fileId : null,
+      identificationDocumentUrl: fileId
+        ? `${ENDPOINT}/storage/buckets/${BUCKET_ID}/files/${fileId}/view??project=${PROJECT_ID}`
+        : null,
+    });
+
+    if (!addUserToDatabase) {
+      await storage.deleteFile(BUCKET_ID!, fileId);
+      await users.delete(newUser.$id);
+
+      throw Error("Failed to create user");
+    }
+
+    const data = {
+      accountId: newUser.$id,
+      userId: addUserToDatabase.$id,
+      fileId: fileId,
+    };
+
+    return parseStringify(data);
   } catch (error: any) {
     if (error && error?.code === 409) {
       return { message: "User already exists" };
@@ -130,23 +176,36 @@ export const handleAdminLogin = async ({
 };
 
 export const signUp = async ({ password, ...userData }: SignupParams) => {
-  const { email, firstName, lastName } = userData;
+  const {
+    email,
+    firstName,
+    lastName,
+    phone,
+    birthDate,
+    gender,
+    address,
+    bloodType,
+  } = userData;
 
   try {
     const newUser = await createUser({
       email,
       password,
-      name: `${firstName} ${lastName}`,
+      firstName,
+      lastName,
+      phone,
+      birthDate,
+      gender,
+      address,
+      bloodType,
+      label: "patient",
     });
 
     if (!newUser) throw new Error("Error creating user");
 
-    await users.updateLabels(newUser.$id, ["patient"]);
+    await users.updateLabels(newUser.userId, ["patient"]);
 
-    const newPatient = await db.patients.create({
-      ...userData,
-      userId: newUser.$id,
-    });
+    const newPatient = await db.patients.create(userData);
 
     if (newPatient) {
       await signIn({ email, password });
@@ -162,7 +221,7 @@ export const signUp = async ({ password, ...userData }: SignupParams) => {
   }
 };
 
-export async function getLoggedInUser() {
+export const getLoggedInUser = async () => {
   try {
     const { account } = await createSessionClient();
 
@@ -176,14 +235,29 @@ export async function getLoggedInUser() {
     let data;
 
     if (role === "patient") {
-      const { documents } = await getAllPatients([
-        Query.equal("userId", user.$id),
+      const patient = await db.patients.list([
+        Query.equal("accountId", user.$id),
         Query.select(["$id"]),
       ]);
 
       data = {
         role: role,
-        patientId: documents[0].$id,
+        patientId: patient.documents[0].$id,
+        ...user,
+      };
+
+      return parseStringify(data);
+    }
+
+    if (role === "doctor") {
+      const doctor = await db.staffs.list([
+        Query.equal("accountId", user.$id),
+        Query.select(["$id"]),
+      ]);
+
+      data = {
+        role: role,
+        doctorId: doctor.documents[0].$id,
         ...user,
       };
 
@@ -199,7 +273,7 @@ export async function getLoggedInUser() {
   } catch (error) {
     return null;
   }
-}
+};
 
 export const logoutAccount = async () => {
   try {
@@ -212,5 +286,36 @@ export const logoutAccount = async () => {
     await account.deleteSession("current");
   } catch (error) {
     return null;
+  }
+};
+
+export const getUsers = async () => {
+  try {
+    const allUsers = await db.users.list([Query.orderDesc("$createdAt")]);
+
+    const initialCounts = {
+      patientCount: 0,
+      staffCount: 0,
+    };
+
+    const counts = allUsers.documents.reduce((acc, user) => {
+      if (user.label !== "patient") {
+        acc.staffCount++;
+      } else {
+        acc.patientCount++;
+      }
+
+      return acc;
+    }, initialCounts);
+
+    const data = {
+      ...counts,
+      documents: allUsers.documents,
+      total: allUsers.total,
+    };
+
+    return parseStringify(data);
+  } catch (error) {
+    console.log("Error getting users", error);
   }
 };

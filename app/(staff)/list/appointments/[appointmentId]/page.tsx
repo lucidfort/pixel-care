@@ -7,6 +7,7 @@ import { getAppointment } from "@/lib/actions/appointment.actions";
 import { getLoggedInUser } from "@/lib/actions/user.actions";
 import { calculateDate, cn, formatDateTime } from "@/lib/utils";
 import { SearchParamProps } from "@/types";
+import { Appointment } from "@/types/appwrite.types";
 import Link from "next/link";
 
 const AppointmentInfo = async ({ params }: SearchParamProps) => {
@@ -83,23 +84,22 @@ const AppointmentInfo = async ({ params }: SearchParamProps) => {
         </div>
 
         {/* RIGHT */}
-        <div className="md:w-1/2 flex flex-col gap-4">
-          <div className="stat-card bg-pending flex flex-col px-4 py-5 gap-4">
-            <HeaderBox
-              title={`Dr. ${appointment?.primaryPhysician.firstName}'s Report`}
-              subtitle=""
-            />
+        {appointment.status !== "cancelled" && (
+          <div className="md:w-1/2 flex flex-col gap-4">
+            <div className="stat-card bg-pending flex flex-col px-4 py-5 gap-4">
+              <HeaderBox title={`Doctor's Report`} subtitle="" />
 
-            {ReportInfo.map((info) => (
-              <div key={info.label} className="flex items-center gap-4">
-                <span className="text-gray-400 w-28 xl:w-40">
-                  {info.label}:
-                </span>
-                {info.data}
-              </div>
-            ))}
+              {ReportInfo.map((info) => (
+                <div key={info.label} className="flex items-center gap-4">
+                  <span className="text-gray-400 w-28 xl:w-40">
+                    {info.label}:
+                  </span>
+                  {info.data}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -107,7 +107,15 @@ const AppointmentInfo = async ({ params }: SearchParamProps) => {
 
 export default AppointmentInfo;
 
-const appointmentInfoCards = ({ vitals, report, appointment }: any) => {
+const appointmentInfoCards = ({
+  vitals,
+  report,
+  appointment,
+}: {
+  vitals: any;
+  report: any;
+  appointment: Appointment;
+}) => {
   const AppointmentInfo = [
     {
       label: "Date",
@@ -115,11 +123,11 @@ const appointmentInfoCards = ({ vitals, report, appointment }: any) => {
     },
     {
       label: "Doctor",
-      data: `${appointment?.primaryPhysician.firstName} ${appointment?.primaryPhysician.lastName}`,
+      data: `${appointment?.primaryPhysician.user.firstName} ${appointment?.primaryPhysician.user.lastName}`,
     },
     {
       label: "Patient",
-      data: `${appointment?.patient.firstName} ${appointment?.patient.lastName}`,
+      data: `${appointment?.patient.user?.firstName} ${appointment?.patient?.user.lastName}`,
     },
     {
       label: "Status",

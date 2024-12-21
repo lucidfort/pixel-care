@@ -10,7 +10,6 @@ export const routeAccessMap: RouteAccessMap = {
   "/doctor(.*)": ["doctor"],
   "/list/patients": ["admin", "doctor"],
   "/list/nurses": ["admin"],
+  "/list/interns": ["admin"],
   "/list/doctors": ["admin"],
-  "/list/notifications": ["admin", "doctor", "patient"],
-  "/list/announcements": ["admin", "doctor", "patient"],
 };

@@ -1,9 +1,9 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import HeaderBox from "@/components/HeaderBox";
 import { doctorColumns } from "@/components/table/columns/doctorColumns";
 import { DataTable } from "@/components/table/DataTable";
+import { Button } from "@/components/ui/button";
 import { getStaffs } from "@/lib/actions/staff.actions";
+import Link from "next/link";
 
 import { Plus } from "lucide-react";
 const DoctorsList = async () => {

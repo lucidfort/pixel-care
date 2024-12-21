@@ -38,7 +38,7 @@ import { useState } from "react";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  role: string;
+  role?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -70,14 +70,16 @@ export function DataTable<TData, TValue>({
   return (
     <div className="data-table">
       <div className="flex items-center gap-2 py-4 mx-1">
-        <Input
-          placeholder="Filter"
-          value={(table.getColumn(role)?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn(role)?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
+        {role && (
+          <Input
+            placeholder="Filter"
+            value={(table.getColumn(role)?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn(role)?.setFilterValue(event.target.value)
+            }
+            className="max-w-sm"
+          />
+        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -127,7 +129,7 @@ export function DataTable<TData, TValue>({
           ))}
         </TableHeader>
         <TableBody>
-          {table.getRowModel().rows?.length ? (
+          {table.getRowModel().rows?.length > 0 ? (
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
@@ -152,7 +154,7 @@ export function DataTable<TData, TValue>({
       </Table>
 
       {/* Pagination Controls */}
-      {data.length > 0 && (
+      {data && data.length > 0 && (
         <div className="table-actions">
           <Button
             variant="outline"

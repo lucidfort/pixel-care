@@ -2,11 +2,7 @@
 
 import { monthlyAppointments } from "@/constants";
 import { formatDateTime } from "@/lib/utils";
-import {
-  CreateAppointmentProps,
-  ReportType,
-  UpdateAppointmentParams,
-} from "@/types";
+import { CreateAppointmentProps, ReportType, Status } from "@/types";
 import { Appointment } from "@/types/appwrite.types";
 import { revalidatePath } from "next/cache";
 import { Query } from "node-appwrite";
@@ -14,8 +10,6 @@ import {
   APPOINTMENT_COLLECTION_ID,
   DATABASE_ID,
   databases,
-  TWILIO_ACCOUNT_SSID,
-  TWILIO_AUTH_TOKEN,
 } from "../appwrite.config";
 import { db } from "../database.config";
 import { parseStringify } from "../utils";
@@ -39,11 +33,11 @@ export const createAppointment = async (
   }
 };
 
-export const getRecentAppointmentList = async () => {
+export const getRecentAppointmentList = async (query?: string[]) => {
   try {
-    const appointments = await db.appointments.list([
-      Query.orderDesc("$createdAt"),
-    ]);
+    const appointments = query
+      ? await db.appointments.list(query)
+      : await db.appointments.list([Query.orderDesc("$createdAt")]);
 
     const documents = appointments.documents;
 
@@ -69,8 +63,8 @@ export const getRecentAppointmentList = async () => {
 
     const data = {
       totalCount: appointments.total,
-      ...counts,
       documents: documents,
+      ...counts,
     };
 
     return parseStringify(data);
@@ -114,7 +108,33 @@ export const getDoctorAppointments = async (id: string) => {
     const appointments = await db.appointments.list([
       Query.equal("primaryPhysician", id),
     ]);
-    return parseStringify(appointments.documents);
+
+    const initialCounts = {
+      scheduledCount: 0,
+      pendingCount: 0,
+      cancelledCount: 0,
+    };
+
+    const counts = (appointments.documents as Appointment[]).reduce(
+      (acc, appointment) => {
+        if (appointment.status === "scheduled") {
+          acc.scheduledCount++;
+        } else if (appointment.status === "pending") {
+          acc.pendingCount++;
+        } else if (appointment.status === "cancelled") {
+          acc.cancelledCount++;
+        }
+        return acc;
+      },
+      initialCounts
+    );
+
+    const data = {
+      documents: appointments.documents,
+      ...counts,
+    };
+
+    return parseStringify(data);
   } catch (error) {
     console.error(`Error fetching doctor: ${id} appointments`, error);
   }
@@ -178,7 +198,15 @@ export const getAppointmentsPerMonth = async (year: number) => {
 export const updateAppointment = async ({
   appointmentId,
   data,
-}: UpdateAppointmentParams) => {
+}: {
+  appointmentId: string;
+  data: {
+    schedule?: Date;
+    status?: Status;
+    primaryPhysician?: string;
+    cancellationReason?: string;
+  };
+}) => {
   try {
     const updatedAppointment = await db.appointments.update(
       appointmentId,
@@ -186,25 +214,13 @@ export const updateAppointment = async ({
     );
 
     if (!updatedAppointment) {
-      throw new Error("Appointment not found");
+      throw new Error("Appointment not updated");
     }
-
-    // const smsMessage = `
-    // Hi, It's PixelCare.
-    // ${
-    //   type === "schedule"
-    //     ? `Your appointment has been scheduled for ${
-    //         formatDateTime(data.schedule!).dateTime
-    //       } with Dr. ${data.primaryPhysician!}`
-    //     : `We regret to inform you that your appointment has been cancelled for the following reason: ${data.cancellationReason}`
-    // }`;
-
-    // await sendSMSNotification(patientToFetch.phone!, smsMessage);
 
     revalidatePath("/list/appointments(.*)");
     revalidatePath("/list/patients(.*)");
-    revalidatePath(`/doctor/${data.primaryPhysician}/appointments`);
-    // revalidatePath(`/list/appointments/${appointmentId}`);
+    revalidatePath(`/doctor/${data?.primaryPhysician}/overview`);
+    revalidatePath(`/doctor/${data?.primaryPhysician}/appointments`);
 
     return parseStringify(updatedAppointment);
   } catch (error) {
@@ -242,37 +258,7 @@ export const cancelOutdatedAppointments = async () => {
   }
 };
 
-export const sendSMSNotification = async (
-  phoneNum: string,
-  content: string
-) => {
-  try {
-    const client = require("twilio")(TWILIO_ACCOUNT_SSID!, TWILIO_AUTH_TOKEN!);
-
-    client.messages
-      .create({
-        body: content,
-        from: "whatsapp:+14155238886",
-        to: `whatsapp:${phoneNum}`,
-      })
-      .then(console.log("Success"))
-      .done();
-
-    // Appwrite && Twilio sms messaging
-
-    // const message = await messaging.createSms(
-    //   ID.unique(),
-    //   content,
-    //   [],
-    //   [userId]
-    // );
-
-    // return parseStringify(message);
-  } catch (error) {
-    console.log(error);
-  }
-};
-
+// REPORT ACTIONS
 export const createReport = async (data: ReportType) => {
   try {
     const report = await db.reports.create(data);

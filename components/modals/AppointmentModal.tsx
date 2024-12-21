@@ -14,11 +14,10 @@ import clsx from "clsx";
 import { CalendarClock } from "lucide-react";
 import { useState } from "react";
 import AppointmentForm from "../forms/AppointmentForm";
-import { Button } from "../ui/button";
 
 const AppointmentModal = ({
   type,
-  id,
+  patientId,
   data,
   className,
 }: AppointmentModalProps) => {
@@ -27,18 +26,16 @@ const AppointmentModal = ({
   return (
     <div className={cn("")}>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button
-            variant="ghost"
-            className={clsx("capitalize", {
-              "text-green-500": type === "schedule",
+        <DialogTrigger>
+          <div
+            className={clsx("capitalize flex items-center gap-2", {
+              "text-green-500": type === "schedule" || type === "create",
               "text-red-500": type === "cancel",
             })}
           >
-            <>
-              <CalendarClock className={cn("mr-2", className)} /> {type}
-            </>
-          </Button>
+            <CalendarClock className={cn("", className)} />
+            <span>{type}</span>
+          </div>
         </DialogTrigger>
 
         <DialogContent
@@ -58,7 +55,7 @@ const AppointmentModal = ({
             type={type}
             data={data}
             setOpen={setOpen}
-            patientId={id}
+            patientId={patientId}
           />
         </DialogContent>
       </Dialog>

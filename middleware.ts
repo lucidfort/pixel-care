@@ -34,9 +34,9 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/admin/:path*", // Protects all /admin routes
-    "/doctor/:path*", // Protects all /doctor routes
-    "/nurse/:path*", // Protects all /nurse routes
-    "/patient/:path*", // Protects all /patient routes
+    "/admin/overview",
+    "/list/:path*",
+    "/doctor/:path*",
+    "/patient/:path*",
   ],
 };

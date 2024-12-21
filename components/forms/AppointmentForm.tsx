@@ -91,10 +91,7 @@ export default function AppointmentForm({
           });
           setOpen && setOpen(false);
 
-          if (path === "patient")
-            router.push(
-              `/patient/${patientId}/new-appointment/appointment-success?appointmentId=${newAppointment.$id}`
-            );
+          if (path === "patient") router.push(`/patient/${patientId}/overview`);
         } else {
           toast({
             variant: "destructive",
@@ -107,12 +104,18 @@ export default function AppointmentForm({
       if (type !== "create") {
         const appointmentToUpdate = {
           appointmentId: data?.$id!,
-          data: {
-            primaryPhysician: values.primaryPhysician,
-            schedule: new Date(values.schedule),
-            status: status as Status,
-            cancellationReason: values.cancellationReason,
-          },
+          data:
+            type === "schedule"
+              ? {
+                  primaryPhysician: values.primaryPhysician,
+                  schedule: new Date(values.schedule!),
+                  status: status as Status,
+                  note: values.note,
+                }
+              : {
+                  status: status as Status,
+                  cancellationReason: values.cancellationReason,
+                },
         };
 
         const updatedAppointment = await updateAppointment(appointmentToUpdate);

@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 
 import CustomFormField, { FormFieldType } from "./CustomFormField";
 
-import { patientValidation } from "@/lib/validation";
+import { patientValidationSchema } from "@/lib/validation";
 
 import { BloodTypes, GenderOptions } from "@/constants";
 import { useDoctors } from "@/context/DoctorsContext";
@@ -25,7 +25,7 @@ import { FileUploader } from "../FileUploader";
 import { Button } from "../ui/button";
 import { SelectItem } from "../ui/select";
 
-const PatientForm = ({ data, type, primaryPhysicianId }: PatientFormProps) => {
+const PatientForm = ({ data, type }: PatientFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { doctors } = useDoctors();
@@ -33,29 +33,34 @@ const PatientForm = ({ data, type, primaryPhysicianId }: PatientFormProps) => {
   const router = useRouter();
   const { toast } = useToast();
 
+  const patientValidation = patientValidationSchema(type);
+
   const form = useForm<z.infer<typeof patientValidation>>({
     resolver: zodResolver(patientValidation),
     defaultValues: {
-      firstName: data?.firstName ?? "",
-      lastName: data?.lastName ?? "",
-      email: data?.email ?? "",
-      phone: data?.phone ?? "",
-      birthDate: data?.birthDate
-        ? new Date(data.birthDate)
+      firstName: data?.user.firstName ?? "",
+      lastName: data?.user.lastName ?? "",
+      email: data?.user.email ?? "",
+      phone: data?.user.phone ?? "",
+      birthDate: data?.user.birthDate
+        ? new Date(data.user.birthDate)
         : new Date(Date.now()),
-      gender: data?.gender ?? ("male" as Gender),
-      address: data?.address ?? "",
+      gender: data?.user.gender ?? ("male" as Gender),
+      address: data?.user.address ?? "",
       occupation: data?.occupation ?? "",
       emergencyContactName: data?.emergencyContactName ?? "",
       emergencyContactNumber: data?.emergencyContactNumber ?? "",
-      primaryPhysician: primaryPhysicianId ?? "",
-      bloodType: data?.bloodType ?? "",
+      primaryPhysician: data?.primaryPhysician?.$id ?? "",
+      bloodType: data?.user.bloodType ?? "",
       identificationNumber: data?.identificationNumber ?? "",
       allergies: data?.allergies ?? "",
       currentMedication: data?.currentMedication ?? "",
       familyMedicalHistory: data?.familyMedicalHistory ?? "",
       pastMedicalHistory: data?.pastMedicalHistory ?? "",
       identificationDocument: [],
+
+      password: "",
+      confirmPassword: "",
     },
   });
 
@@ -86,52 +91,52 @@ const PatientForm = ({ data, type, primaryPhysicianId }: PatientFormProps) => {
       };
 
       if (type === "create") {
-        const newUser = await createPatient(patientData);
+        const newUser = await createPatient({
+          ...patientData,
+          password: values.password!,
+          label: "patient",
+        });
 
-        if (newUser) {
-          form.reset();
-          router.back();
-
+        if (newUser.success === false) {
           toast({
-            description: "Registration successful",
-          });
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Registration failed",
-            description: "An error occurred. Please try again",
+            title: newUser.message,
           });
         }
+
+        form.reset();
+        router.back();
+
+        toast({
+          description: "Registration successful",
+        });
       }
 
       if (type === "update" && data) {
         const updatedPatient = await updatePatient({
-          dataToUpdate: patientData,
+          dataToUpdate: { ...patientData, label: "patient" },
           patientId: data.$id,
+          userId: data.user.$id,
         });
 
-        if (updatedPatient) {
-          form.reset();
-          router.back();
-
-          toast({
-            description: "Update successful",
-          });
-        } else {
+        if (updatedPatient.success === false) {
           toast({
             variant: "destructive",
-            title: "Update failed",
-            description: "An error occurred. Please try again",
+            title: updatedPatient.message,
           });
         }
+
+        toast({
+          description: "Update successful",
+        });
+
+        router.back();
       }
     } catch (error: any) {
       console.error("Form submission error: ", error);
 
       toast({
         variant: "destructive",
-        title: "Registration failed",
-        description: "An error occurred. Please try again",
+        title: "Registration failed. Please try again",
       });
     } finally {
       setIsLoading(false);
@@ -145,7 +150,7 @@ const PatientForm = ({ data, type, primaryPhysicianId }: PatientFormProps) => {
         className="flex flex-col gap-4"
       >
         <section>
-          <h2 className="sub-header my-7">Personal Information</h2>
+          <h2 className="sub-header mt-7">Personal Information</h2>
         </section>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
@@ -240,8 +245,12 @@ const PatientForm = ({ data, type, primaryPhysicianId }: PatientFormProps) => {
             name="bloodType"
             label="Blood Type"
           >
-            {BloodTypes.map((type, i) => (
-              <SelectItem key={i} value={type} className="shad-select-trigger">
+            {BloodTypes.map((type) => (
+              <SelectItem
+                key={type}
+                value={type}
+                className="shad-select-trigger"
+              >
                 <div className="flex cursor-pointer items-center gap-2">
                   <p>{type}</p>
                 </div>
@@ -250,7 +259,7 @@ const PatientForm = ({ data, type, primaryPhysicianId }: PatientFormProps) => {
           </CustomFormField>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <div className="flex flex-col md:flex-row gap-4 justify-between">
           <CustomFormField
             control={form.control}
             fieldType={FormFieldType.INPUT}
@@ -276,7 +285,7 @@ const PatientForm = ({ data, type, primaryPhysicianId }: PatientFormProps) => {
           >
             {doctors
               ? doctors.map((doctor) => (
-                  <SelectItem key={doctor.id} value={doctor.name}>
+                  <SelectItem key={doctor.id} value={doctor.id}>
                     <div className="flex cursor-pointer items-center gap-2">
                       <Image
                         src={doctor.img || "/assets/icons/noAvatar.png"}
@@ -293,11 +302,50 @@ const PatientForm = ({ data, type, primaryPhysicianId }: PatientFormProps) => {
           </CustomFormField>
         </div>
 
+        <CustomFormField
+          control={form.control}
+          fieldType={FormFieldType.INPUT}
+          name="identificationNumber"
+          label="Identification Number"
+          placeholder="123456789"
+        />
+
+        {type === "create" && (
+          <>
+            <div className="flex flex-col sm:flex-row gap-6">
+              <CustomFormField
+                control={form.control}
+                fieldType={FormFieldType.PASSWORD}
+                name="password"
+                label="Password"
+              />
+
+              <CustomFormField
+                control={form.control}
+                fieldType={FormFieldType.PASSWORD}
+                name="confirmPassword"
+                label="Confirm Password"
+              />
+            </div>
+
+            <CustomFormField
+              control={form.control}
+              fieldType={FormFieldType.SKELETON}
+              name="identificationDocument"
+              renderSkeleton={(field) => (
+                <FormControl>
+                  <FileUploader mediaUrl={""} fieldChange={field.onChange} />
+                </FormControl>
+              )}
+            />
+          </>
+        )}
+
         <section>
-          <h2 className="sub-header my-7">Medical Information</h2>
+          <h2 className="sub-header mt-7">Medical Information</h2>
         </section>
 
-        <div className="flex flex-col xl:flex-row gap-6">
+        <div className="flex flex-col md:flex-row gap-6">
           <CustomFormField
             control={form.control}
             fieldType={FormFieldType.TEXTAREA}
@@ -315,7 +363,7 @@ const PatientForm = ({ data, type, primaryPhysicianId }: PatientFormProps) => {
         </div>
 
         {/* Family & Past Medications */}
-        <div className="flex flex-col xl:flex-row gap-6">
+        <div className="flex flex-col md:flex-row gap-6">
           <CustomFormField
             control={form.control}
             fieldType={FormFieldType.TEXTAREA}
@@ -330,33 +378,6 @@ const PatientForm = ({ data, type, primaryPhysicianId }: PatientFormProps) => {
             label="Past Medical History"
             placeholder="Appendectomy, Tonsillectomy"
           />
-        </div>
-
-        {/* IDENTIFICATION */}
-        <div className="flex flex-wrap gap-4">
-          <CustomFormField
-            control={form.control}
-            fieldType={FormFieldType.INPUT}
-            name="identificationNumber"
-            label="Identification Number"
-            placeholder="123456789"
-          />
-
-          {type === "create" && (
-            <CustomFormField
-              control={form.control}
-              fieldType={FormFieldType.SKELETON}
-              name="identificationDocument"
-              renderSkeleton={(field) => (
-                <FormControl>
-                  <FileUploader
-                    mediaUrl={data?.identificationDocumentUrl}
-                    fieldChange={field.onChange}
-                  />
-                </FormControl>
-              )}
-            />
-          )}
         </div>
 
         <Button

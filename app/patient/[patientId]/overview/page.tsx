@@ -11,8 +11,6 @@ const PatientAppointmentsPage = async () => {
 
   const appointments = await getPatientAppointments(loggedInUser.patientId);
 
-  if (!appointments) return [];
-
   return (
     <div className="w-full">
       <HeaderBox
@@ -21,7 +19,11 @@ const PatientAppointmentsPage = async () => {
       />
 
       <div className="flex-end w-full mt-8 mb-4">
-        <Button variant="secondary" className="bg-green-500" asChild>
+        <Button
+          variant="secondary"
+          className="bg-green-500 cursor-pointer"
+          asChild
+        >
           <Link href={`/patient/${loggedInUser?.patientId}/new-appointment`}>
             Book Appointment
           </Link>

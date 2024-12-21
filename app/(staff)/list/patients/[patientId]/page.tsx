@@ -2,6 +2,7 @@ import ActiveShapePie from "@/components/charts/ActiveShapePie";
 import HeaderBox from "@/components/HeaderBox";
 import InfoCard from "@/components/InfoCard";
 import AppointmentModal from "@/components/modals/AppointmentModal";
+import StatCard from "@/components/StatCard";
 import { patientAppointmentColumns } from "@/components/table/columns/patientAppointmentColumns";
 import { DataTable } from "@/components/table/DataTable";
 import { getPatientAppointments } from "@/lib/actions/appointment.actions";
@@ -17,9 +18,9 @@ const SinglePatientPage = async ({ params }: SearchParamProps) => {
   const appointments = await getPatientAppointments(patientId);
 
   const data = [
-    { value: 0, name: "Pending", fill: "#79b5ec" },
-    { value: 0, name: "Scheduled", fill: "#24ae7c" },
-    { value: 0, name: "Cancelled", fill: "#f37877" },
+    { value: 0, name: "Pending Appointments", fill: "pending" },
+    { value: 0, name: "Scheduled Appointments", fill: "appointments" },
+    { value: 0, name: "Cancelled Appointments", fill: "cancelled" },
   ];
 
   appointments.forEach((appointment: Appointment) => {
@@ -45,10 +46,15 @@ const SinglePatientPage = async ({ params }: SearchParamProps) => {
         </div>
 
         {/* RIGHT */}
-        <div className="w-full md:w-[44%] lg:w-[35%]">
-          <div className="stat-card h-[50vh]">
-            <ActiveShapePie data={data} />
-          </div>
+        <div className="w-full md:w-[43%] xl:w-1/3 flex flex-wrap sm:flex-row gap-4 md:flex-col">
+          {data.map((d) => (
+            <StatCard
+              key={d.name}
+              count={d.value}
+              label={d.name}
+              type={d.fill as "pending" | "appointments" | "cancelled"}
+            />
+          ))}
         </div>
       </div>
 
@@ -56,7 +62,7 @@ const SinglePatientPage = async ({ params }: SearchParamProps) => {
         <div className="flex-between">
           <HeaderBox title="Appointments" subtitle="" />
 
-          <AppointmentModal type="create" id={patientId} />
+          <AppointmentModal type="create" patientId={patientId} />
         </div>
 
         <DataTable

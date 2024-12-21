@@ -10,13 +10,11 @@ export default async function PatientLayout({
 }) {
   const loggedInUser = await getLoggedInUser();
 
-  if (!loggedInUser) redirect("/sign-in");
-
   const user = {
-    id: loggedInUser.patientId,
-    name: loggedInUser.name,
-    email: loggedInUser.email,
-    role: loggedInUser.role,
+    id: loggedInUser?.patientId,
+    name: loggedInUser?.name,
+    email: loggedInUser?.email,
+    role: loggedInUser?.role,
   };
 
   return (

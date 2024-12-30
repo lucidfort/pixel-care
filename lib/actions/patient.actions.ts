@@ -43,9 +43,6 @@ export const createPatient = async ({
       ...userData,
       user: newUser.userId,
       accountId: newUser.accountId,
-      treatmentConsent: true,
-      disclosureConsent: true,
-      privacyConsent: true,
     };
 
     const newPatient = await db.patients.create(data);

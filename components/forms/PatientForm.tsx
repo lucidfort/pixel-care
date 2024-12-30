@@ -95,6 +95,9 @@ const PatientForm = ({ data, type }: PatientFormProps) => {
           ...patientData,
           password: values.password!,
           label: "patient",
+          treatmentConsent: true,
+          disclosureConsent: true,
+          privacyConsent: true,
         });
 
         if (newUser.success === false) {

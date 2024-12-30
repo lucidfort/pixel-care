@@ -41,6 +41,10 @@ declare interface PatientType extends Users {
   currentMedication: string | undefined;
   familyMedicalHistory: string | undefined;
   pastMedicalHistory: string | undefined;
+
+  disclosureConsent: boolean;
+  privacyConsent: boolean;
+  treatmentConsent: boolean;
 }
 
 declare interface SignupParams extends PatientType {

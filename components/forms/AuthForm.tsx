@@ -21,7 +21,7 @@ import { authFormValidation } from "@/lib/validation";
 
 import { Loader, MessageCircleWarning } from "lucide-react";
 
-import { AuthFormDefaultValues, GenderOptions } from "@/constants";
+import { AuthFormDefaultValues, BloodTypes, GenderOptions } from "@/constants";
 import { useDoctors } from "@/context/DoctorsContext";
 import { useToast } from "@/hooks/use-toast";
 import { Gender } from "@/types";
@@ -97,6 +97,7 @@ export default function AuthForm({ type }: { type: "sign-in" | "sign-up" }) {
           birthDate: new Date(values.birthDate!),
           gender: values.gender! as Gender,
           address: values.address!,
+          bloodType: values.bloodType!,
           occupation: values.occupation!,
           emergencyContactName: values.emergencyContactName!,
           emergencyContactNumber: values.emergencyContactNumber!,
@@ -106,21 +107,26 @@ export default function AuthForm({ type }: { type: "sign-in" | "sign-up" }) {
           familyMedicalHistory: values.familyMedicalHistory!,
           pastMedicalHistory: values.pastMedicalHistory!,
           identificationNumber: values.identificationNumber!,
+          identificationDocument:
+            (values.identificationDocument as File[]) || undefined,
           privacyConsent: values.privacyConsent!,
           treatmentConsent: values.treatmentConsent!,
           disclosureConsent: values.disclosureConsent!,
-          bloodType: values.bloodType!,
         };
 
         const newPatient = await signUp({ ...patientData, label: "patient" });
 
-        if (newPatient) router.push(`/patient/${newPatient.$id}/overview`);
+        if (newPatient.success === false) {
+          toast({
+            title: newPatient.message,
+          });
+        }
+
+        router.push(`/patient/${newPatient.data?.id}/overview`);
       }
     } catch (error) {
       toast({
-        title: "ERROR",
-        description: "Something went wrong. Please try again",
-        variant: "destructive",
+        title: "Something went wrong. Please try again",
       });
     } finally {
       setIsLoading(false);
@@ -360,19 +366,39 @@ export default function AuthForm({ type }: { type: "sign-in" | "sign-up" }) {
               />
             </div>
 
-            <CustomFormField
-              control={form.control}
-              fieldType={FormFieldType.INPUT}
-              name="identificationNumber"
-              label="Identification Number"
-              placeholder="123456789"
-            />
+            <div className="flex flex-col xl:flex-row gap-6">
+              <CustomFormField
+                control={form.control}
+                fieldType={FormFieldType.SELECT}
+                name="bloodType"
+                label="Blood Type"
+              >
+                {BloodTypes.map((type) => (
+                  <SelectItem
+                    key={type}
+                    value={type}
+                    className="shad-select-trigger"
+                  >
+                    <div className="flex cursor-pointer items-center gap-2">
+                      <p>{type}</p>
+                    </div>
+                  </SelectItem>
+                ))}
+              </CustomFormField>
+              <CustomFormField
+                control={form.control}
+                fieldType={FormFieldType.INPUT}
+                name="identificationNumber"
+                label="Identification Number"
+                placeholder="123456789"
+              />
+            </div>
 
             <CustomFormField
               control={form.control}
               fieldType={FormFieldType.SKELETON}
-              name="image"
-              label="Your image"
+              name="identificationDocument"
+              label="Your picture"
               renderSkeleton={(field) => (
                 <FormControl>
                   <FileUploader mediaUrl="" fieldChange={field.onChange} />

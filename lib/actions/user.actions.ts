@@ -12,12 +12,11 @@ import {
 } from "../appwrite.config";
 import { parseStringify } from "../utils";
 
-import { SigninProps, SignupParams, Users } from "@/types";
+import { PatientType, SigninProps, Users } from "@/types";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { db } from "../database.config";
-import { getAllPatients, uploadFile } from "./patient.actions";
-import { getStaffs } from "./staff.actions";
+import { uploadFile } from "./patient.actions";
 
 export const createUser = async (user: Users & { password: string }) => {
   try {
@@ -175,49 +174,62 @@ export const handleAdminLogin = async ({
   }
 };
 
-export const signUp = async ({ password, ...userData }: SignupParams) => {
-  const {
-    email,
-    firstName,
-    lastName,
-    phone,
-    birthDate,
-    gender,
-    address,
-    bloodType,
-  } = userData;
-
+export const signUp = async ({
+  email,
+  firstName,
+  lastName,
+  phone,
+  birthDate,
+  gender,
+  address,
+  bloodType,
+  password,
+  label,
+  identificationDocument,
+  ...userData
+}: PatientType & { password: string }) => {
   try {
     const newUser = await createUser({
-      email,
       password,
+      email,
       firstName,
       lastName,
-      phone,
       birthDate,
       gender,
+      phone,
       address,
+      label,
       bloodType,
-      label: "patient",
+      identificationDocument,
     });
 
-    if (!newUser) throw new Error("Error creating user");
+    await users.updateLabels(newUser.accountId, [label]);
 
-    await users.updateLabels(newUser.userId, ["patient"]);
+    const data = {
+      ...userData,
+      user: newUser.userId,
+      accountId: newUser.accountId,
+    };
 
-    const newPatient = await db.patients.create(userData);
+    const newPatient = await db.patients.create(data);
 
-    if (newPatient) {
-      await signIn({ email, password });
-      revalidatePath("/list/patients");
+    if (!newPatient || newPatient === undefined) {
+      await db.users.delete(newUser.userId);
+      await users.delete(newUser.accountId);
+      await storage.deleteFile(BUCKET_ID!, newUser.fileId);
+
+      return { success: false, message: "Failed to create patient" };
     }
-    {
-      await users.delete(newUser.$id);
-    }
 
-    return parseStringify(newPatient);
+    revalidatePath("/list/patients");
+
+    await signIn({ email, password });
+
+    return { success: true, data: { id: newPatient.$id } };
   } catch (error: any) {
     console.error("Error signing up", error);
+
+    return { success: false, message: "An error occurred. Please try again" };
   }
 };
 

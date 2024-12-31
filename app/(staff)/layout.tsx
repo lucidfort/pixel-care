@@ -10,7 +10,10 @@ export default async function StaffLayout({
   const loggedInUser = await getLoggedInUser();
 
   const user = {
-    id: loggedInUser?.$id,
+    id:
+      loggedInUser?.role === "doctor"
+        ? loggedInUser?.doctorId
+        : loggedInUser?.$id,
     name: loggedInUser?.name,
     email: loggedInUser?.email,
     role: loggedInUser?.role,

@@ -40,10 +40,16 @@ export const SidebarLinks = (id?: string, role?: string) => [
     visibility: ["doctor"],
   },
   {
+    route: `/doctor/${id}/patients`,
+    label: "Patients",
+    icon: <Bed />,
+    visibility: ["doctor"],
+  },
+  {
     route: "/list/patients",
     label: "Patients",
     icon: <Bed />,
-    visibility: ["doctor", "admin"],
+    visibility: ["admin"],
   },
   {
     route: "/list/staffs",

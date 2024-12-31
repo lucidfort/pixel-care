@@ -102,6 +102,18 @@ export const getStaffs = async ({
   }
 };
 
+export const getDoctorsPatients = async (doctorId: string) => {
+  try {
+    const patients = await db.patients.list([
+      Query.equal("primaryPhysician", doctorId),
+    ]);
+
+    return parseStringify(patients);
+  } catch (error) {
+    console.log("Error fetching doctor's patients", error);
+  }
+};
+
 export const getStaff = async ({
   id,
   query,

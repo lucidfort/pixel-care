@@ -3,10 +3,9 @@ import { getDoctorAppointments } from "@/lib/actions/appointment.actions";
 import { getLoggedInUser } from "@/lib/actions/user.actions";
 import { extractName } from "@/lib/utils";
 import { SearchParamProps } from "@/types";
-import { redirect } from "next/navigation";
 
 interface Item {
-  patient: { lastName: string; firstName: string };
+  patient: { user: { lastName: string; firstName: string } };
   schedule: string;
 }
 
@@ -16,14 +15,12 @@ const DoctorsOverviewPage = async ({ params }: SearchParamProps) => {
 
   const loggedInUser = await getLoggedInUser();
 
-  if (!loggedInUser) redirect("/sign-in");
-
   const { lastName } = extractName(loggedInUser?.name);
 
   const appointments = await getDoctorAppointments(id);
 
   const calendarEvents = appointments?.documents?.map((item: Item) => ({
-    title: `${item?.patient?.firstName} ${item?.patient?.lastName}`,
+    title: `${item?.patient?.user.firstName} ${item?.patient?.user.lastName}`,
     start: new Date(item?.schedule),
     end: endTime(new Date(item?.schedule)),
   }));

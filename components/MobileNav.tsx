@@ -57,7 +57,7 @@ const MobileNav = async ({
         </SheetTrigger>
         <SheetContent
           side="left"
-          className="bg-dark-200 max-h-screen overflow-auto"
+          className="bg-dark-200 max-w-[324px] overflow-hidden"
         >
           <SheetHeader>
             <SheetTitle>
@@ -73,14 +73,11 @@ const MobileNav = async ({
               </div>
             </SheetTitle>
           </SheetHeader>
-          <div className="mobilenav-sheet ">
+          <div className="mobilenav-sheet">
             <SheetClose asChild>{renderItems()}</SheetClose>
 
             <LogoutFooter user={user} type="mobile" />
           </div>
-
-          {/* <SheetFooter className="z-20">
-          </SheetFooter> */}
         </SheetContent>
       </Sheet>
     </section>

@@ -120,3 +120,12 @@ export const extractName = (name: string) => {
 
   return { firstName, lastName };
 };
+
+export const getLastSevenYears = (currentYear: number) => {
+  const startYear = Math.max(2024, currentYear - 6);
+
+  return Array.from(
+    { length: currentYear - startYear + 1 },
+    (_, i) => currentYear - i
+  );
+};

@@ -1,21 +1,15 @@
-import {
-  getAppointmentsPerMonth,
-  getRecentAppointmentList,
-} from "@/lib/actions/appointment.actions";
+import { getRecentAppointmentList } from "@/lib/actions/appointment.actions";
 import { Clock8, LucideUsers2, Workflow } from "lucide-react";
 
 import StatCard from "@/components/StatCard";
 import ActiveShapePie from "@/components/charts/ActiveShapePie";
-import SimpleBarChart from "@/components/charts/SimpleBarChart";
+import BarChartContainer from "@/components/charts/BarChartContainer";
 import { getUsers } from "@/lib/actions/user.actions";
 import Link from "next/link";
 
 const AdminOverviewPage = async () => {
   const users = await getUsers();
   const appointments = await getRecentAppointmentList();
-
-  const year = new Date().getFullYear();
-  const data = await getAppointmentsPerMonth(year);
 
   const appointmentsCount = [
     { value: appointments.pendingCount, name: "Pending", fill: "#79b5ec" },
@@ -43,7 +37,7 @@ const AdminOverviewPage = async () => {
         <Link href="/list/staffs" className="w-full">
           <StatCard
             count={users.staffCount}
-            label="Staff"
+            label="Staffs"
             svg={<Workflow className="size-8 w-fit text-green-700" />}
           />
         </Link>
@@ -64,12 +58,7 @@ const AdminOverviewPage = async () => {
           <ActiveShapePie data={appointmentsCount} />
         </div>
 
-        <div className="h-96 w-full rounded-2xl bg-cover py-6 px-4 shadow-lg shadow-neutral-800">
-          <h2 className="text-lg text-gray-400 font-semibold">
-            {`Yearly Evaluation (${year})`}
-          </h2>
-          <SimpleBarChart data={data} />
-        </div>
+        <BarChartContainer />
       </div>
     </div>
   );

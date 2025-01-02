@@ -1,20 +1,13 @@
-import { Gender } from "@/types";
 import { FormFieldType } from "@/components/forms/CustomFormField";
+import { Gender } from "@/types";
 import {
-  Activity,
   BarChart3,
-  BarChart4,
   Bed,
-  BellDot,
   Clock10,
-  Folder,
   GraduationCap,
   Hospital,
-  Megaphone,
-  Settings,
   SquareChevronDown,
   Stethoscope,
-  User2,
   Users2,
 } from "lucide-react";
 

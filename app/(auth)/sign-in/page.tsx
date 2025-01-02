@@ -7,6 +7,7 @@ import PasskeyModal from "@/components/modals/PasskeyModal";
 
 const SignInPage = async ({ searchParams }: SearchParamProps) => {
   const searchP = await searchParams;
+
   const isAdmin = searchP.admin === "true";
 
   return (

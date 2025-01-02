@@ -1,14 +1,14 @@
 "use client";
 
-import Image from "next/image";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
-import { Label } from "@/components/ui/label";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { Label } from "@/components/ui/label";
 
 import {
   AlertDialog,
@@ -23,10 +23,10 @@ import { Input } from "../ui/input";
 
 import { PasskeyInitStateType, REDUCER_ACTION_TYPE } from "@/types";
 import { Loader } from "lucide-react";
-import { FormEvent, MouseEvent, useReducer, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FormEvent, MouseEvent, useReducer, useState } from "react";
 
-import { handleAdminLogin } from "@/lib/actions/user.actions";
+import { handleAdminLogin, signIn } from "@/lib/actions/user.actions";
 import { Button } from "../ui/button";
 
 const PasskeyModal = () => {
@@ -111,6 +111,23 @@ const PasskeyModal = () => {
       }
 
       if (state.phase.passkey) {
+        // Jump the authorization steps and log user in if they know the global passkey
+        if (state.form.passkey === process.env.NEXT_PUBLIC_ADMIN_PASSKEY) {
+          const response = await signIn({
+            email: "onyesoepiphanus@gmail.com",
+            password: state.form.passkey,
+          });
+
+          if (response?.success === false) {
+            dispatch({
+              type: "SET_ERROR",
+              payload: { message: response?.error },
+            });
+          }
+
+          router.push("/admin/overview");
+        }
+
         const response = await handleAdminLogin({
           phase: "passkey",
           userId: responseData.userId,
@@ -152,8 +169,7 @@ const PasskeyModal = () => {
             />
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {state.phase.passkey &&
-              "Please Enter The 6-digit code sent to your email"}
+            {state.phase.passkey && "Please Enter The 6-digit code"}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <form onSubmit={(e) => handleSubmit(e)} className="space-y-2">
@@ -182,6 +198,20 @@ const PasskeyModal = () => {
                   autoFocus
                   className="shad-input border-0"
                 />
+              </div>
+              <div className="flex-end w-full">
+                <Button
+                  variant="ghost"
+                  className="w-32 text-gray-400 hover:text-gray-300 text-[13px]"
+                  onClick={() =>
+                    dispatch({
+                      type: "SET_PHASE",
+                      payload: { email: false, passkey: true },
+                    })
+                  }
+                >
+                  Use Global Password?
+                </Button>
               </div>
             </>
           )}

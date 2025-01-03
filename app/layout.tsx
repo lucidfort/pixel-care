@@ -7,6 +7,8 @@ import { DoctorsProvider } from "@/context/DoctorsContext";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 
+import { Analytics } from "@vercel/analytics/react";
+
 const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
@@ -37,6 +39,8 @@ export default async function RootLayout({
 
           <Toaster />
         </ThemeProvider>
+
+        <Analytics mode="production" />
       </body>
     </html>
   );

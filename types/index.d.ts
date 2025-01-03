@@ -15,6 +15,7 @@ declare type Status = "pending" | "scheduled" | "cancelled";
 declare interface SigninProps {
   email: string;
   password: string;
+  admin?: boolean;
 }
 
 type Users = {

@@ -26,23 +26,17 @@ import { Loader } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, MouseEvent, useReducer, useState } from "react";
 
-import { handleAdminLogin, signIn } from "@/lib/actions/user.actions";
+import { sendOtp, signIn, signInAdmin } from "@/lib/actions/user.actions";
 import { Button } from "../ui/button";
 
 const PasskeyModal = () => {
   const router = useRouter();
+  const [isGlobal, setIsGlobal] = useState(false);
   const [responseData, setResponseData] = useState({
     userId: "",
     phrase: "",
     secret: "",
   });
-
-  const error = (message: string) => {
-    dispatch({
-      type: "SET_ERROR",
-      payload: { message },
-    });
-  };
 
   // INITIALIZING THE REDUCER FUNCTION
   const initialState = {
@@ -80,24 +74,42 @@ const PasskeyModal = () => {
     router.replace("/sign-in");
   };
 
+  const errorMessage = (message?: string, animate?: boolean) => {
+    let timeoutId;
+
+    dispatch({
+      type: "SET_ERROR",
+      payload: { message: message || "", animate: animate || false },
+    });
+
+    timeoutId = setTimeout(
+      () =>
+        dispatch({
+          type: "SET_ERROR",
+          payload: { message: "", animate: false },
+        }),
+      5000
+    );
+
+    return () => clearTimeout(timeoutId);
+  };
+
   const handleSubmit = async (
     e: MouseEvent<HTMLButtonElement> | FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
 
     try {
-      if (state.phase.email) {
-        dispatch({
-          type: "SET_ISLOADING",
-          payload: true,
-        });
-        const response = await handleAdminLogin({
-          phase: "email",
-          email: state.form.email,
-        });
+      dispatch({
+        type: "SET_ISLOADING",
+        payload: true,
+      });
 
-        if (!response?.success) {
-          error(response?.message!);
+      if (state.phase.email) {
+        const response = await sendOtp(state.form.email);
+
+        if (response?.success === false) {
+          errorMessage(response.message);
         } else {
           setResponseData(response?.data);
 
@@ -106,43 +118,49 @@ const PasskeyModal = () => {
             payload: { email: false, passkey: true },
           });
 
-          error("");
+          dispatch({
+            type: "SET_ERROR",
+            payload: { message: "", animate: false },
+          });
         }
       }
 
       if (state.phase.passkey) {
         // Jump the authorization steps and log user in if they know the global passkey
-        if (state.form.passkey === process.env.NEXT_PUBLIC_ADMIN_PASSKEY) {
+        if (isGlobal) {
           const response = await signIn({
             email: "onyesoepiphanus@gmail.com",
             password: state.form.passkey,
+            admin: true,
           });
 
           if (response?.success === false) {
-            dispatch({
-              type: "SET_ERROR",
-              payload: { message: response?.error },
-            });
+            errorMessage(response?.error);
+
+            return;
           }
+
+          setIsGlobal(false);
 
           router.push("/admin/overview");
         }
 
-        const response = await handleAdminLogin({
-          phase: "passkey",
-          userId: responseData.userId,
+        const response = await signInAdmin({
+          passkey: state.form.passkey,
           secret: responseData.secret,
+          userId: responseData.userId,
         });
 
         if (response?.success) {
           router.push("/admin/overview");
         } else {
-          error(response?.message!);
+          errorMessage(response?.message!);
         }
       }
     } catch (error: any) {
       const errorMessage = error?.message || "An unknown error occurred";
-      error(errorMessage);
+
+      errorMessage(errorMessage);
     } finally {
       dispatch({ type: "SET_ISLOADING", payload: false });
     }
@@ -169,7 +187,10 @@ const PasskeyModal = () => {
             />
           </AlertDialogTitle>
           <AlertDialogDescription>
-            {state.phase.passkey && "Please Enter The 6-digit code"}
+            {state.phase.passkey &&
+              `Please Enter The 6-digit code ${
+                !isGlobal ? "sent to your email" : ""
+              }`}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <form onSubmit={(e) => handleSubmit(e)} className="space-y-2">
@@ -203,12 +224,14 @@ const PasskeyModal = () => {
                 <Button
                   variant="ghost"
                   className="w-32 text-gray-400 hover:text-gray-300 text-[13px]"
-                  onClick={() =>
+                  onClick={() => {
+                    setIsGlobal(true);
+
                     dispatch({
                       type: "SET_PHASE",
                       payload: { email: false, passkey: true },
-                    })
-                  }
+                    });
+                  }}
                 >
                   Use Global Password?
                 </Button>
@@ -242,22 +265,25 @@ const PasskeyModal = () => {
                 </InputOTPGroup>
               </InputOTP>
 
-              <div className="flex-between">
-                <p className="text-sm">Secret Phrase: {responseData.phrase}</p>
+              {!isGlobal && (
+                <div className="flex-between">
+                  <p className="text-sm">
+                    Secret Phrase: {responseData.phrase}
+                  </p>
 
-                <Button
-                  variant="ghost"
-                  className="w-32 text-gray-400 hover:text-gray-300 text-[10px]"
-                  onClick={() =>
-                    handleAdminLogin({
-                      phase: "email",
-                      email: state.form.email,
-                    })
-                  }
-                >
-                  Resend code?
-                </Button>
-              </div>
+                  <Button
+                    variant="ghost"
+                    className="w-32 text-gray-400 hover:text-gray-300 text-[10px]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+
+                      sendOtp(state.form.email);
+                    }}
+                  >
+                    Resend code?
+                  </Button>
+                </div>
+              )}
             </>
           )}
 

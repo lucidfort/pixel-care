@@ -11,7 +11,7 @@ import {
   storage,
   users,
 } from "../appwrite.config";
-import { parseStringify } from "../utils";
+import { decryptKey, encryptKey, parseStringify } from "../utils";
 
 import { PatientType, SigninProps, Users } from "@/types";
 import { revalidatePath } from "next/cache";
@@ -76,7 +76,16 @@ export const createUser = async (user: Users & { password: string }) => {
 
 export const signIn = async (user: SigninProps) => {
   try {
-    if (user.password === ADMIN_PASSKEY) user.password = "0987654321";
+    if (user.admin) {
+      if (user.password === ADMIN_PASSKEY) {
+        user.password = "0987654321";
+      } else {
+        return {
+          success: false,
+          error: "Invalid passkey",
+        };
+      }
+    }
 
     const session = await account.createEmailPasswordSession(
       user.email,
@@ -107,67 +116,78 @@ export const signIn = async (user: SigninProps) => {
   }
 };
 
-export const handleAdminLogin = async ({
-  phase,
-  email,
-  userId,
+export const sendOtp = async (email: string) => {
+  try {
+    const fetchedUser = await users.list([Query.equal("email", email!)]);
+    const user = fetchedUser.users[0];
+
+    if (!user) {
+      return { success: false, message: "User does not exist" };
+    }
+
+    const role =
+      Array.isArray(user.labels) && user.labels.length > 0
+        ? user.labels[0]
+        : null;
+
+    if (role === "admin") {
+      const sessionToken = await account.createEmailToken(
+        ID.unique(),
+        email!,
+        true
+      );
+
+      const encrptSecret = encryptKey(sessionToken.secret);
+
+      const data = {
+        phrase: sessionToken.phrase,
+        secret: encrptSecret,
+        userId: sessionToken.userId,
+      };
+
+      return { success: true, data: parseStringify(data) };
+    } else {
+      return {
+        success: false,
+        message: "You do not have the required role to access this page",
+      };
+    }
+  } catch (error) {
+    console.error("Failed to get otp", error);
+  }
+};
+
+export const signInAdmin = async ({
   secret,
+  userId,
+  passkey,
 }: {
-  phase: "email" | "passkey";
-  email?: string;
-  userId?: string;
   secret?: string;
+  userId?: string;
+  passkey?: string;
 }) => {
   try {
-    if (phase === "email") {
-      const fetchedUser = await users.list([Query.equal("email", email!)]);
-      const user = fetchedUser.users[0];
+    const decryptSecret = decryptKey(secret!);
 
-      if (!user) {
-        return { success: false, message: "User does not exist" };
-      }
-
-      const role =
-        Array.isArray(user.labels) && user.labels.length > 0
-          ? user.labels[0]
-          : null;
-
-      if (role === "admin") {
-        const sessionToken = await account.createEmailToken(
-          ID.unique(),
-          email!,
-          true
-        );
-
-        const data = {
-          phrase: sessionToken.phrase,
-          secret: sessionToken.secret,
-          userId: sessionToken.userId,
-        };
-
-        return { success: true, data: parseStringify(data) };
-      } else {
-        return {
-          success: false,
-          message: "You do not have the required role to access this page",
-        };
-      }
+    if (passkey !== decryptSecret) {
+      return {
+        success: false,
+        message: "Invalid passkey",
+      };
     }
 
-    if (phase === "passkey") {
-      const session = await account.createSession(userId!, secret!);
+    const session = await account.createSession(userId!, decryptSecret);
 
-      const setCookie = await cookies();
+    const setCookie = await cookies();
 
-      setCookie.set("appwrite-session", session.secret, {
-        path: "/",
-        httpOnly: true,
-        sameSite: "strict",
-        secure: true,
-      });
+    setCookie.set("appwrite-session", session.secret, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "strict",
+      secure: true,
+    });
 
-      return { success: true, data: parseStringify(session.$createdAt) };
-    }
+    return { success: true, data: parseStringify(session.$createdAt) };
   } catch (error) {
     console.error("An error occurred", error);
     return {

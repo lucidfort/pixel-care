@@ -21,8 +21,6 @@ const BarChartContainer = () => {
     const getYearlyEvaluation = async () => {
       try {
         const response = await getAppointmentsPerMonth(year);
-
-        console.log({ Response: response });
         setData(response);
       } catch (error) {
         console.error("Error fetching yearly data", error);

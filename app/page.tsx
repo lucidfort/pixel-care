@@ -5,7 +5,7 @@ import React from "react";
 
 const Home = () => {
   return (
-    <div className="flex-center flex-col mx-auto min-h-screen gap-12">
+    <div className="flex-center flex-col mx-auto min-h-screen gap-12 w-full">
       <div className="flex-center flex-col h-[70vh]">
         <Link
           href="/"
@@ -34,7 +34,7 @@ const Home = () => {
         </div>
       </div>
 
-      <div className="flex-center flex-col w-[30rem] md:w-[45rem] gap-6 mb-4">
+      <div className="flex-center flex-col w-full md:w-[45rem] gap-6 mb-4">
         <h2 className="header">How to use the application!!</h2>
 
         <p className="sub-header">

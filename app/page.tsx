@@ -34,7 +34,7 @@ const Home = () => {
         </div>
       </div>
 
-      <div className="flex-center flex-col w-full md:w-[45rem] gap-6 mb-4">
+      <div className="flex-center flex-col w-full md:w-[45rem] gap-6 mb-4 px-4">
         <h2 className="header">How to use the application!!</h2>
 
         <p className="sub-header">

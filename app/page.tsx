@@ -44,19 +44,19 @@ const Home = () => {
 
         <ul className="list-item list-outside list-disc space-y-4 tracking-wide leading-relaxed">
           <li>
-            In the login page, you'll find a link with the text, 'Admin'. Click
-            on it
+            In the login page, you&apos;ll find a link with the text,
+            &apos;Admin&apos;. Click on it
           </li>
           <li>
             You can type in my email address{" "}
             <i>
               <em>onyesoepiphanus@gmail.com</em>
             </i>{" "}
-            and quickly write an email to me requesting for the code. I'll send
-            that to you in a jiffy
+            and quickly write an email to me requesting for the code. I&apos;ll
+            send that to you in a jiffy
           </li>
           <li>
-            Or you can use the global password, 123456, if you're too busy
+            Or you can use the global password, 123456, if you&apos;re too busy
           </li>
           <li>
             Create a doctor or a patient account. Log out and use the details
@@ -64,8 +64,8 @@ const Home = () => {
           </li>
 
           <li>
-            Have fun navigating through the platform and if you get stuck, don't
-            hesitate to reach out. <br />
+            Have fun navigating through the platform and if you get stuck,
+            don&apos;t hesitate to reach out. <br />
             <span className="flex gap-2">
               Thank you for being here{" "}
               <Heart className="text-red-700 fill-red-700" />
